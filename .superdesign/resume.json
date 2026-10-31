@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "targets": {
+    "/": {
+      "targetKind": "existing-ui",
+      "projectId": "c1363fdc-914c-4efc-90ab-1001092d1c57",
+      "baselineDraftId": "4e121b3d-6dd3-4f14-8a45-09e951d78f82",
+      "activeDraftId": "4e121b3d-6dd3-4f14-8a45-09e951d78f82",
+      "designSystemPath": ".superdesign/design-system.md",
+      "contextFiles": [
+        ".superdesign/design-system.md",
+        "lib/main.dart",
+        ".superdesign/init/theme.md"
+      ],
+      "fingerprints": {
+        ".superdesign/design-system.md": "2d77c0b4954fd7dae376f250ec72fde96935de69ce9b7849b7693558856c2312",
+        "lib/main.dart": "378407e6bd9ea2ff65e94ac8b96947f9163de2a8d56215b9916f3a41fea8e7bb",
+        ".superdesign/init/theme.md": "697e311a6bcbcb34c2298d882641234ab55001179620d8c590c0e646e5c8f94d"
+      },
+      "drafts": {
+        "4e121b3d-6dd3-4f14-8a45-09e951d78f82": {
+          "title": "Hôm Nay Ăn Gì? - Loot Crate",
+          "visualDirection": "mobile fantasy loot-crate with filters, rarity reel, inventory grid, and result dialog",
+          "currentVersion": 3
+        }
+      },
+      "updatedAt": "2026-10-31T03:24:18.8916421Z"
+    }
+  }
+}
