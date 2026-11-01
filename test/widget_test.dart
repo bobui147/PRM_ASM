@@ -7,6 +7,7 @@ import 'package:prmgr5/data/sample_foods.dart';
 import 'package:prmgr5/food_spinner_page.dart';
 import 'package:prmgr5/main.dart';
 import 'package:prmgr5/models/food_item.dart';
+import 'package:prmgr5/services/food_library.dart';
 import 'package:prmgr5/services/maps_launcher.dart';
 
 void main() {
@@ -250,8 +251,10 @@ void main() {
       imageIndex: 0,
     );
 
+    final library = FoodLibrary.inMemory(baseFoods: const [otherCategoryFood]);
+    addTearDown(library.dispose);
     await tester.pumpWidget(
-      const MaterialApp(home: FoodSpinnerPage(foods: [otherCategoryFood])),
+      MaterialApp(home: FoodSpinnerPage(library: library)),
     );
 
     expect(find.byKey(const Key('empty-reel')), findsOneWidget);

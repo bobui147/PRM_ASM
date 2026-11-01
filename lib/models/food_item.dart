@@ -62,6 +62,7 @@ class FoodItem {
     required this.rarity,
     required this.imageIndex,
     this.mealPeriods = const {MealPeriod.lunch, MealPeriod.dinner},
+    this.isCustom = false,
   });
 
   final String id;
@@ -72,7 +73,48 @@ class FoodItem {
   final int imageIndex;
   final Set<MealPeriod> mealPeriods;
 
+  /// Món do người dùng tự thêm; không có ảnh trong atlas.
+  final bool isCustom;
+
   int get imageCell => imageIndex % 6;
+
+  Map<String, Object?> toJson() => {
+        'id': id,
+        'name': name,
+        'category': category.name,
+        'price': price,
+        'rarity': rarity.name,
+        'mealPeriods': [for (final meal in mealPeriods) meal.name],
+      };
+
+  /// Đọc món tự tạo đã lưu. Trả về null nếu dữ liệu hỏng hoặc sai định dạng.
+  static FoodItem? tryFromJson(Object? json) {
+    if (json is! Map) {
+      return null;
+    }
+    try {
+      final name = json['name'] as String;
+      final price = json['price'] as int;
+      if (name.trim().isEmpty || price <= 0) {
+        return null;
+      }
+      final meals = json['mealPeriods'] as List? ?? const [];
+      return FoodItem(
+        id: json['id'] as String,
+        name: name,
+        category: FoodCategory.values.byName(json['category'] as String),
+        price: price,
+        rarity: FoodRarity.values.byName(json['rarity'] as String),
+        imageIndex: 0,
+        mealPeriods: {
+          for (final meal in meals) MealPeriod.values.byName(meal as String),
+        },
+        isCustom: true,
+      );
+    } catch (_) {
+      return null;
+    }
+  }
 
   String get imageAsset {
     final sheet = imageIndex ~/ 6 + 1;
@@ -117,22 +159,54 @@ int budgetWeight(FoodItem food, FoodBudget budget) {
   return 1;
 }
 
+/// Món yêu thích có trọng số gấp đôi.
+const favoriteWeightMultiplier = 2;
+
+/// Món chưa quay gần đây có trọng số gấp 4 món vừa quay,
+/// nên món vừa quay vẫn có thể ra nhưng ít hơn 4 lần.
+const freshWeightMultiplier = 4;
+
+int spinWeight(
+  FoodItem food,
+  FoodBudget budget, {
+  Set<String> favoriteIds = const {},
+  Set<String> recentIds = const {},
+}) {
+  var weight = budgetWeight(food, budget);
+  if (favoriteIds.contains(food.id)) {
+    weight *= favoriteWeightMultiplier;
+  }
+  if (!recentIds.contains(food.id)) {
+    weight *= freshWeightMultiplier;
+  }
+  return weight;
+}
+
 FoodItem pickFood(
   List<FoodItem> foods,
   FoodBudget budget,
-  math.Random random,
-) {
+  math.Random random, {
+  Set<String> favoriteIds = const {},
+  Set<String> recentIds = const {},
+}) {
   if (foods.isEmpty) {
     throw ArgumentError.value(foods, 'foods', 'must not be empty');
   }
 
+  int weightOf(FoodItem food) => spinWeight(
+        food,
+        budget,
+        favoriteIds: favoriteIds,
+        recentIds: recentIds,
+      );
+
   final totalWeight = foods.fold<int>(
     0,
-    (total, food) => total + budgetWeight(food, budget),
+    (total, food) => total + weightOf(food),
   );
   var roll = random.nextInt(totalWeight);
   for (final food in foods) {
-    roll -= budgetWeight(food, budget);
+    roll -= weightOf(food);
     if (roll < 0) {
       return food;
     }
@@ -141,3 +215,31 @@ FoodItem pickFood(
 }
 
 String formatPrice(int price) => '${price ~/ 1000}.000đ';
+
+/// Độ hiếm của món tự tạo được suy ra từ giá.
+FoodRarity rarityForPrice(int price) => switch (price) {
+      < 50000 => FoodRarity.common,
+      < 80000 => FoodRarity.rare,
+      < 130000 => FoodRarity.epic,
+      < 170000 => FoodRarity.legendary,
+      _ => FoodRarity.ancient,
+    };
+
+FoodItem createCustomFood({
+  required String id,
+  required String name,
+  required FoodCategory category,
+  required int price,
+  required Set<MealPeriod> mealPeriods,
+}) {
+  return FoodItem(
+    id: id,
+    name: name,
+    category: category,
+    price: price,
+    rarity: rarityForPrice(price),
+    imageIndex: 0,
+    mealPeriods: mealPeriods,
+    isCustom: true,
+  );
+}

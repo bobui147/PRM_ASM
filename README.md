@@ -26,16 +26,17 @@ Chức năng chọn món và ảnh hoạt động offline sau khi cài/chạy ap
 
 - **Flutter**, giao diện viết bằng **Dart** và **Material Design 3**.
 - Dart SDK constraint: **`^3.5.2`** (`>=3.5.2 <4.0.0`) trong `pubspec.yaml`. Đây là khoảng phiên bản chấp nhận, không khóa Dart tại đúng 3.5.2.
-- Kotlin: **1.8.22** — `android/settings.gradle`.
-- Android Gradle Plugin: **8.1.0** — `android/settings.gradle`.
-- Gradle Wrapper: **8.3** — `android/gradle/wrapper/gradle-wrapper.properties`.
-- Java source/target compatibility và Kotlin JVM target: **1.8** — `android/app/build.gradle`.
+- Flutter SDK đã build thử: **3.47.5 stable**.
+- Kotlin: **2.4.0** — `android/settings.gradle`.
+- Android Gradle Plugin: **9.1.0** — `android/settings.gradle`.
+- Gradle Wrapper: **9.3.1** — `android/gradle/wrapper/gradle-wrapper.properties`.
+- Java source/target compatibility và Kotlin JVM target: **17** — `android/app/build.gradle`.
 - Kiểm thử: **`flutter_test`** từ Flutter SDK.
 - Lint: **`flutter_lints: ^4.0.0`**.
 - Dependency có sẵn: **`cupertino_icons: ^1.0.8`**.
 - Mở Google Maps: Dart `Uri`, JavaScript interop trên web và `MethodChannel`/Android `Intent` trên Android; không thêm package mở URL.
 
-**JDK chạy Gradle khác Java target của mã ứng dụng.** AGP 8.1 yêu cầu JDK 17 để chạy build, trong khi dự án vẫn biên dịch mã Java/Kotlin với target 1.8. Tham khảo [yêu cầu tương thích của AGP 8.1](https://developer.android.com/build/releases/agp-8-1-0-release-notes).
+**JDK chạy Gradle khác Java target của mã ứng dụng.** Flutter dùng JDK đi kèm Android Studio (`C:\Program Files\Android\Android Studio\jbr`, hiện là **Java 25.0.3**) để chạy Gradle, còn mã Java/Kotlin của app được biên dịch với target 17. Gradle 8.3 cũ không chạy được với Java 25 (lỗi `Unsupported class file major version 69`), nên dự án đã nâng lên Gradle 9.3.1. Với Java 25 cần Gradle **9.1.0 trở lên**. Tham khảo [bảng tương thích Java/Gradle](https://docs.gradle.org/current/userguide/compatibility.html#java).
 
 `compileSdk`, `minSdk`, `targetSdk` và NDK hiện lấy theo Flutter SDK trong `android/app/build.gradle`, không phải các số cố định trong README. Kiểm tra `flutter doctor -v` và đọc lỗi build trước khi đổi cấu hình. Không cần chạy `flutter upgrade`, `flutter pub upgrade` hay tự nâng Kotlin/Gradle/AGP để thử app.
 
@@ -223,7 +224,7 @@ git diff --check
 
 Kết quả gần nhất đã xác minh trên môi trường phát triển: **11/11 test passed** và `dart analyze lib test` báo **No issues found**. Bộ test bao gồm URL Google Maps, giờ chuyển bữa, dữ liệu/atlas, bộ lọc, ngân sách, đổi bữa, layout điện thoại, quay lại, danh sách rỗng và quay đủ 5 giây khi bật/tắt giảm chuyển động.
 
-Widget test không xác nhận được app Maps thật có mở, Android build có thành công hoặc APK có chạy tốt trên thiết bị; các bước đó cần kiểm tra riêng.
+Widget test không xác nhận được app Maps thật có mở hoặc APK có chạy tốt trên thiết bị; các bước đó cần kiểm tra riêng.
 
 Tạo APK debug để thử trên Android:
 
@@ -231,7 +232,7 @@ Tạo APK debug để thử trên Android:
 flutter build apk --debug
 ```
 
-Nếu build thành công, file nằm tại `build/app/outputs/flutter-apk/app-debug.apk`. Chưa có kết quả build Android được xác minh cho cấu hình hiện tại. `release` hiện dùng debug signing trong `android/app/build.gradle`; cần cấu hình ký phát hành riêng trước khi phân phối chính thức.
+Nếu build thành công, file nằm tại `build/app/outputs/flutter-apk/app-debug.apk`. Cấu hình hiện tại đã build APK debug thành công với Flutter 3.47.5, cài bằng `adb install` và mở được trên máy ảo Android `sdk gphone64 x86 64`. `release` hiện dùng debug signing trong `android/app/build.gradle`; cần cấu hình ký phát hành riêng trước khi phân phối chính thức.
 
 ## 10. Xử lý lỗi thường gặp
 
@@ -262,6 +263,6 @@ Trên Android, phải build/chạy lại sau thay đổi `MainActivity.kt`. Ki�
 - Lựa chọn ngân sách/bữa và kết quả chỉ nằm trong bộ nhớ; đóng app sẽ đặt lại.
 - Ảnh là tài nguyên AI tạo bằng ImageGen, mang tính minh họa, không phải ảnh cam kết từ quán bán. Giá món cũng là giá tham khảo.
 - Kho dùng ảnh cục bộ; dự án không lấy ảnh trực tiếp từ website tham khảo khi chạy.
-- Chưa xác minh trực tiếp việc mở Google Maps trên Chrome/Android thật, và chưa xác minh build Android.
+- Chưa xác minh trực tiếp việc mở Google Maps trên Chrome/Android thật. Build Android đã được xác minh trên máy ảo, chưa thử trên điện thoại thật.
 
 Nguồn cảm hứng: [truanayangi.com](https://truanayangi.com/?theme=ket-hoi-tho-lun) và [repository truanayangi-com/truanayangi](https://github.com/truanayangi-com/truanayangi). Tham khảo ý tưởng không đồng nghĩa có quyền sao chép toàn bộ mã, ảnh, âm thanh hoặc thương hiệu của bên khác.

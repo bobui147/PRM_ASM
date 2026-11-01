@@ -3,9 +3,11 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import 'data/sample_foods.dart';
 import 'models/food_item.dart';
+import 'services/food_library.dart';
 import 'services/maps_launcher.dart';
+import 'services/share_launcher.dart';
+import 'widgets/food_photo.dart';
 
 const _pageColor = Color(0xFF15120E);
 const _surfaceColor = Color(0xFF201A12);
@@ -30,9 +32,9 @@ MealPeriod mealPeriodFor(DateTime time) => switch (time.hour) {
     };
 
 class FoodSpinnerPage extends StatefulWidget {
-  const FoodSpinnerPage({super.key, this.foods = sampleFoods});
+  const FoodSpinnerPage({super.key, required this.library});
 
-  final List<FoodItem> foods;
+  final FoodLibrary library;
 
   @override
   State<FoodSpinnerPage> createState() => _FoodSpinnerPageState();
@@ -46,16 +48,16 @@ class _FoodSpinnerPageState extends State<FoodSpinnerPage>
   late List<FoodItem> _reel;
   Timer? _mealPeriodTimer;
 
-  FoodCategory _category = FoodCategory.lunch;
   MealPeriod _mealPeriod = mealPeriodFor(DateTime.now());
-  FoodBudget _budget = FoodBudget.fifty;
   int _winnerIndex = 0;
   bool _isSpinning = false;
   bool _dialogOpen = false;
   FoodItem? _result;
 
-  List<FoodItem> get _eligibleFoods =>
-      filterFoods(widget.foods, _category, _mealPeriod);
+  FoodCategory get _category => widget.library.category;
+  FoodBudget get _budget => widget.library.budget;
+
+  List<FoodItem> get _eligibleFoods => widget.library.eligibleFoods(_mealPeriod);
 
   bool get _canSpin =>
       _eligibleFoods.isNotEmpty && !_isSpinning && !_dialogOpen;
@@ -83,6 +85,23 @@ class _FoodSpinnerPageState extends State<FoodSpinnerPage>
     ]).animate(_controller);
     _reel = _buildPreviewReel();
     _scheduleMealPeriodUpdate();
+    widget.library.addListener(_handleLibraryChanged);
+  }
+
+  /// Kho món, bộ lọc hoặc món ẩn thay đổi (kể cả từ tab khác).
+  void _handleLibraryChanged() {
+    if (!mounted) {
+      return;
+    }
+    if (_isSpinning || _dialogOpen) {
+      // Giữ nguyên dải thẻ đang quay/đang xem kết quả.
+      setState(() {});
+      return;
+    }
+    setState(() {
+      _result = null;
+      _reel = _buildPreviewReel();
+    });
   }
 
   void _scheduleMealPeriodUpdate() {
@@ -130,25 +149,15 @@ class _FoodSpinnerPageState extends State<FoodSpinnerPage>
       });
       return;
     }
-    if (category == _category) {
-      return;
-    }
-    setState(() {
-      _category = category;
-      _result = null;
-      _reel = _buildPreviewReel();
-    });
+    // FoodLibrary lưu lựa chọn và báo lại qua _handleLibraryChanged.
+    widget.library.setCategory(category);
   }
 
   void _selectBudget(FoodBudget? budget) {
-    if (_isSpinning || _dialogOpen || budget == null || budget == _budget) {
+    if (_isSpinning || _dialogOpen || budget == null) {
       return;
     }
-    setState(() {
-      _budget = budget;
-      _result = null;
-      _reel = _buildPreviewReel();
-    });
+    widget.library.setBudget(budget);
   }
 
   void _spin() {
@@ -157,7 +166,13 @@ class _FoodSpinnerPageState extends State<FoodSpinnerPage>
       return;
     }
 
-    final winner = pickFood(foods, _budget, _random);
+    final winner = pickFood(
+      foods,
+      _budget,
+      _random,
+      favoriteIds: widget.library.favoriteIds,
+      recentIds: widget.library.recentFoodIds(DateTime.now()),
+    );
     final winnerIndex = 30 + _random.nextInt(5);
     final reel = List.generate(
       winnerIndex + 9,
@@ -187,6 +202,7 @@ class _FoodSpinnerPageState extends State<FoodSpinnerPage>
       _isSpinning = false;
       _dialogOpen = true;
     });
+    widget.library.recordSpin(result, DateTime.now());
     WidgetsBinding.instance.addPostFrameCallback((_) => _showResult(result));
   }
 
@@ -198,7 +214,7 @@ class _FoodSpinnerPageState extends State<FoodSpinnerPage>
       context: context,
       barrierDismissible: false,
       barrierColor: Colors.black.withAlpha(200),
-      builder: (context) => _ResultDialog(food: food),
+      builder: (context) => _ResultDialog(food: food, library: widget.library),
     );
     if (mounted) {
       setState(() {
@@ -215,6 +231,7 @@ class _FoodSpinnerPageState extends State<FoodSpinnerPage>
 
   @override
   void dispose() {
+    widget.library.removeListener(_handleLibraryChanged);
     _mealPeriodTimer?.cancel();
     _controller
       ..removeStatusListener(_handleAnimationStatus)
@@ -567,7 +584,10 @@ class _FoodSpinnerPageState extends State<FoodSpinnerPage>
               mainAxisSpacing: 12,
               childAspectRatio: 0.76,
             ),
-            itemBuilder: (context, index) => _InventoryCard(food: foods[index]),
+            itemBuilder: (context, index) => _InventoryCard(
+              food: foods[index],
+              favorite: widget.library.isFavorite(foods[index].id),
+            ),
           ),
       ],
     );
@@ -620,7 +640,7 @@ class _ReelCard extends StatelessWidget {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                _FoodPhoto(food: food),
+                FoodPhoto(food: food),
                 Positioned(
                   top: 5,
                   left: 6,
@@ -680,9 +700,10 @@ class _ReelCard extends StatelessWidget {
 }
 
 class _InventoryCard extends StatelessWidget {
-  const _InventoryCard({required this.food});
+  const _InventoryCard({required this.food, required this.favorite});
 
   final FoodItem food;
+  final bool favorite;
 
   @override
   Widget build(BuildContext context) {
@@ -704,7 +725,23 @@ class _InventoryCard extends StatelessWidget {
           Expanded(
             child: SizedBox(
               width: double.infinity,
-              child: _FoodPhoto(food: food),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  FoodPhoto(food: food),
+                  if (favorite)
+                    Positioned(
+                      top: 6,
+                      right: 6,
+                      child: Icon(
+                        Icons.favorite,
+                        key: ValueKey('inventory-favorite-${food.id}'),
+                        size: 18,
+                        color: _goldColor,
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
           Padding(
@@ -765,9 +802,19 @@ class _InventoryCard extends StatelessWidget {
 }
 
 class _ResultDialog extends StatelessWidget {
-  const _ResultDialog({required this.food});
+  const _ResultDialog({required this.food, required this.library});
 
   final FoodItem food;
+  final FoodLibrary library;
+
+  Future<void> _share(BuildContext context) async {
+    final shared = await shareText(shareMessage(food));
+    if (!shared && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Không thể mở bảng chia sẻ.')),
+      );
+    }
+  }
 
   Future<void> _openMaps(BuildContext context) async {
     final opened = await openGoogleMaps(food.name);
@@ -838,14 +885,77 @@ class _ResultDialog extends StatelessWidget {
                     border: Border.all(color: _hairlineColor),
                   ),
                   clipBehavior: Clip.antiAlias,
-                  child: _FoodPhoto(food: food),
+                  child: FoodPhoto(food: food),
                 ),
                 const SizedBox(height: 20),
                 Text(
                   'Giá tham khảo · ${formatPrice(food.price)}',
                   style: const TextStyle(color: _textColor, fontSize: 16),
                 ),
-                const SizedBox(height: 26),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Expanded(
+                      child: SizedBox(
+                        height: 50,
+                        child: ListenableBuilder(
+                          listenable: library,
+                          builder: (context, _) {
+                            final favorite = library.isFavorite(food.id);
+                            return OutlinedButton.icon(
+                              key: const Key('favorite-button'),
+                              onPressed: () => library.toggleFavorite(food.id),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor:
+                                    favorite ? _goldColor : _warmTextColor,
+                                side: BorderSide(
+                                  color: favorite ? _goldColor : _hairlineColor,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                              ),
+                              icon: Icon(
+                                favorite
+                                    ? Icons.favorite
+                                    : Icons.favorite_border,
+                              ),
+                              label: Text(
+                                favorite ? 'ĐÃ THÍCH' : 'YÊU THÍCH',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: SizedBox(
+                        height: 50,
+                        child: OutlinedButton.icon(
+                          key: const Key('share-button'),
+                          onPressed: () => _share(context),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: _warmTextColor,
+                            side: const BorderSide(color: _hairlineColor),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                          icon: const Icon(Icons.share_outlined),
+                          label: const Text(
+                            'CHIA SẺ',
+                            style: TextStyle(fontWeight: FontWeight.w800),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
                 SizedBox(
                   width: double.infinity,
                   height: 50,
@@ -891,42 +1001,6 @@ class _ResultDialog extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _FoodPhoto extends StatelessWidget {
-  const _FoodPhoto({required this.food});
-
-  final FoodItem food;
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final width = constraints.maxWidth;
-        final height = constraints.maxHeight;
-        final cellSide = math.max(width, height);
-        final column = food.imageCell % 3;
-        final row = food.imageCell ~/ 3;
-        return Stack(
-          clipBehavior: Clip.hardEdge,
-          children: [
-            Positioned(
-              left: width / 2 - (column + 0.5) * cellSide,
-              top: height / 2 - (row + 0.5) * cellSide,
-              width: cellSide * 3,
-              height: cellSide * 2,
-              child: Image.asset(
-                food.imageAsset,
-                fit: BoxFit.fill,
-                filterQuality: FilterQuality.medium,
-                semanticLabel: food.name,
-              ),
-            ),
-          ],
-        );
-      },
     );
   }
 }
