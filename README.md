@@ -20,7 +20,22 @@ Dự án lấy cảm hứng từ giao diện [Két Hội Thợ Lùn — Trưa Na
 - Quay lại nhiều lần; xử lý danh sách không có món phù hợp.
 - Mở Google Maps để tìm theo tên món vừa quay.
 
-Chức năng chọn món và ảnh hoạt động offline sau khi cài/chạy app. Google Maps là liên kết bên ngoài và cần kết nối mạng để tìm quán. Dự án không có backend, database hoặc đăng nhập.
+### Chức năng mới
+
+- **Thanh điều hướng 3 tab**: **Quay**, **Lịch sử**, **Món ăn** (`lib/home_shell.dart`). Mỗi tab giữ nguyên trạng thái khi chuyển qua lại.
+- **Lịch sử quay** (tab Lịch sử): lưu tối đa **50 lượt** gần nhất gồm tên món, nhóm, giá và thời điểm quay. Có thống kê tổng lượt và món ra nhiều nhất, kèm nút xóa lịch sử có hỏi xác nhận.
+- **Giảm lặp món**: món đã quay trong **3 ngày lịch** gần nhất (hôm nay, hôm qua, hôm kia) có trọng số thấp hơn **4 lần**. Món đó vẫn có thể ra, chỉ ít hơn.
+- **Món yêu thích**: bấm ♥ trong tab Món ăn hoặc nút **YÊU THÍCH** trong hộp kết quả. Món yêu thích có trọng số **gấp đôi** và có dấu ♥ trên thẻ trong kho.
+- **Ẩn món**: bấm biểu tượng con mắt trong tab Món ăn để loại món khỏi vòng quay. Bấm lại để hiện món trở lại.
+- **Thêm, sửa, xóa món tự tạo** (tab Món ăn → **Thêm món**):
+  - Nhập tên (tối đa 40 ký tự, không trùng món đã có) và giá (1–999 nghìn đồng), chọn nhóm món. Với món chính, chọn thêm bữa phù hợp (ít nhất một bữa).
+  - Độ hiếm được suy ra từ giá. Món tự tạo dùng icon của nhóm món thay cho ảnh.
+  - Chỉ món tự tạo mới sửa hoặc xóa được (menu ⋮). Xóa món có hỏi xác nhận, lịch sử quay của món đó vẫn được giữ.
+- **Tìm kiếm và lọc** trong tab Món ăn theo tên và nhóm món, kèm số món đang yêu thích và đang ẩn.
+- **Chia sẻ kết quả**: nút **CHIA SẺ** trong hộp kết quả mở bảng chia sẻ của Android (Zalo, Messenger...) với nội dung kiểu "Hôm nay mình ăn Phở bò (khoảng 50.000đ)". Chức năng này dùng `Intent.ACTION_SEND` qua `MethodChannel` trong `MainActivity.kt`, không thêm package. Trên web chưa hỗ trợ chia sẻ.
+- **Lưu dữ liệu trên thiết bị** bằng `shared_preferences`: nhóm món, ngân sách, món yêu thích, món ẩn, món tự tạo và lịch sử đều được giữ lại sau khi đóng app. Dữ liệu lưu bị hỏng sẽ được bỏ qua và không làm app crash.
+
+Chức năng chọn món và ảnh hoạt động offline sau khi cài/chạy app. Google Maps là liên kết bên ngoài và cần kết nối mạng để tìm quán. Dữ liệu chỉ lưu cục bộ trên máy. Dự án không có backend, đồng bộ hoặc đăng nhập.
 
 ## 2. Tech stack và cấu hình
 
@@ -33,7 +48,7 @@ Chức năng chọn món và ảnh hoạt động offline sau khi cài/chạy ap
 - Java source/target compatibility và Kotlin JVM target: **17** — `android/app/build.gradle`.
 - Kiểm thử: **`flutter_test`** từ Flutter SDK.
 - Lint: **`flutter_lints: ^4.0.0`**.
-- Dependency có sẵn: **`cupertino_icons: ^1.0.8`**.
+- Dependency: **`cupertino_icons: ^1.0.8`** và **`shared_preferences: ^2.5.6`** (lưu dữ liệu người dùng trên thiết bị).
 - Mở Google Maps: Dart `Uri`, JavaScript interop trên web và `MethodChannel`/Android `Intent` trên Android; không thêm package mở URL.
 
 **JDK chạy Gradle khác Java target của mã ứng dụng.** Flutter dùng JDK đi kèm Android Studio (`C:\Program Files\Android\Android Studio\jbr`, hiện là **Java 25.0.3**) để chạy Gradle, còn mã Java/Kotlin của app được biên dịch với target 17. Gradle 8.3 cũ không chạy được với Java 25 (lỗi `Unsupported class file major version 69`), nên dự án đã nâng lên Gradle 9.3.1. Với Java 25 cần Gradle **9.1.0 trở lên**. Tham khảo [bảng tương thích Java/Gradle](https://docs.gradle.org/current/userguide/compatibility.html#java).
@@ -144,22 +159,36 @@ Google Maps nhận truy vấn dạng `Tên món quán ăn`. Chrome mở tab mớ
 ```text
 PRM_ASM/
 ├── lib/
-│   ├── main.dart                      # Entry point, MaterialApp, theme Material 3
-│   ├── food_spinner_page.dart         # Màn hình, bộ lọc, animation, dialog kết quả
+│   ├── main.dart                      # Entry point, mở SharedPreferences, theme Material 3
+│   ├── home_shell.dart                # Thanh điều hướng 3 tab: Quay, Lịch sử, Món ăn
+│   ├── app_colors.dart                # Bảng màu dùng chung
+│   ├── food_spinner_page.dart         # Tab Quay: bộ lọc, animation, dialog kết quả
+│   ├── pages/
+│   │   ├── history_page.dart          # Tab Lịch sử: danh sách lượt quay, thống kê
+│   │   ├── manage_foods_page.dart     # Tab Món ăn: tìm kiếm, yêu thích, ẩn, sửa/xóa
+│   │   └── food_form_page.dart        # Form thêm/sửa món tự tạo, kiểm tra dữ liệu nhập
+│   ├── widgets/
+│   │   └── food_photo.dart            # Ảnh món từ atlas hoặc icon cho món tự tạo
 │   ├── models/
-│   │   └── food_item.dart             # Model, bữa ăn, ngân sách, chọn có trọng số
+│   │   ├── food_item.dart             # Model, bữa ăn, ngân sách, chọn có trọng số
+│   │   └── spin_record.dart           # Một lượt quay trong lịch sử, thống kê
 │   ├── data/
 │   │   └── sample_foods.dart          # 57 món mẫu và bữa phù hợp
 │   └── services/
+│       ├── food_library.dart          # Trạng thái dùng chung: yêu thích, ẩn, món tự tạo, lịch sử
+│       ├── app_storage.dart           # Đọc/ghi SharedPreferences
+│       ├── share_launcher*.dart       # Chia sẻ kết quả qua MethodChannel
 │       ├── maps_launcher.dart         # Tạo URL, chọn triển khai theo nền tảng
 │       ├── maps_launcher_web.dart     # Mở tab Google Maps trên web
 │       ├── maps_launcher_mobile.dart  # Gọi MethodChannel trên native
 │       └── maps_launcher_stub.dart    # Trả về không hỗ trợ trên nền tảng khác
 ├── assets/images/                    # 10 atlas ảnh, mỗi atlas tối đa 6 món
-├── test/widget_test.dart             # Unit test và widget test
+├── test/
+│   ├── widget_test.dart              # Test vòng quay, bộ lọc, dữ liệu mẫu
+│   └── features_test.dart            # Test yêu thích, ẩn món, món tự tạo, lịch sử, lưu dữ liệu
 ├── android/
 │   ├── app/src/main/kotlin/com/example/prmgr5/MainActivity.kt
-│   │                                 # Xử lý MethodChannel mở URL
+│   │                                 # MethodChannel mở URL và chia sẻ text
 │   ├── app/build.gradle              # Application ID, SDK, Java/Kotlin target
 │   ├── settings.gradle               # Phiên bản AGP và Kotlin
 │   └── gradle/wrapper/gradle-wrapper.properties
@@ -222,7 +251,11 @@ flutter test --no-pub
 git diff --check
 ```
 
-Kết quả gần nhất đã xác minh trên môi trường phát triển: **11/11 test passed** và `dart analyze lib test` báo **No issues found**. Bộ test bao gồm URL Google Maps, giờ chuyển bữa, dữ liệu/atlas, bộ lọc, ngân sách, đổi bữa, layout điện thoại, quay lại, danh sách rỗng và quay đủ 5 giây khi bật/tắt giảm chuyển động.
+Kết quả gần nhất (01/11/2026): `flutter analyze lib test` báo **No issues found**. `flutter test` chạy **22 test: 21 qua, 1 lỗi**.
+
+- `test/widget_test.dart` (11 test, đều qua): URL Google Maps, giờ chuyển bữa, dữ liệu/atlas, bộ lọc, ngân sách, đổi bữa, layout điện thoại, quay lại, danh sách rỗng và quay đủ 5 giây khi bật/tắt giảm chuyển động.
+- `test/features_test.dart` (11 test, 10 qua): trọng số yêu thích và món vừa ăn, ẩn món, thêm/sửa/xóa món tự tạo, giới hạn lịch sử, lưu và đọc lại dữ liệu, bỏ qua dữ liệu hỏng, kiểm tra tên/giá, nội dung chia sẻ, chuyển 3 tab.
+- **Test đang lỗi**: "thêm món qua form rồi món hiện trong kho". Sau khi bấm lưu, test không tìm thấy ô tìm kiếm của tab Món ăn (`Bad state: No element`). Chưa xác định nguyên nhân nằm ở test hay ở form.
 
 Widget test không xác nhận được app Maps thật có mở hoặc APK có chạy tốt trên thiết bị; các bước đó cần kiểm tra riêng.
 
@@ -258,9 +291,12 @@ Trên Android, phải build/chạy lại sau thay đổi `MainActivity.kt`. Ki�
 
 ## 11. Giới hạn và nguồn tham khảo
 
-- Chưa có lịch sử quay lưu lâu dài, tài khoản, đồng bộ, món tự tạo hoặc hệ thống Khẩu vị/EXP.
+- Chưa có tài khoản, đồng bộ giữa các máy hoặc hệ thống Khẩu vị/EXP. Dữ liệu chỉ lưu trên một thiết bị và mất khi gỡ app hoặc xóa dữ liệu app.
 - Bộ lọc chưa có vùng miền, món chay hoặc dị ứng; nhãn bữa là dữ liệu gợi ý do dự án gắn thủ công.
-- Lựa chọn ngân sách/bữa và kết quả chỉ nằm trong bộ nhớ; đóng app sẽ đặt lại.
+- Nhóm món và ngân sách được lưu lại. Bữa ăn chọn thủ công thì không được lưu và luôn theo giờ thiết bị khi mở app.
+- Món tự tạo không có ảnh riêng, chỉ dùng icon của nhóm món.
+- Chia sẻ kết quả chỉ chạy trên Android, chưa hỗ trợ web.
+- Trên máy ảo mới kiểm tra màn hình đầu tiên và thanh 3 tab. Chưa bấm thử quay, chia sẻ hay thêm món trên máy ảo.
 - Ảnh là tài nguyên AI tạo bằng ImageGen, mang tính minh họa, không phải ảnh cam kết từ quán bán. Giá món cũng là giá tham khảo.
 - Kho dùng ảnh cục bộ; dự án không lấy ảnh trực tiếp từ website tham khảo khi chạy.
 - Chưa xác minh trực tiếp việc mở Google Maps trên Chrome/Android thật. Build Android đã được xác minh trên máy ảo, chưa thử trên điện thoại thật.
