@@ -2,16 +2,18 @@ import 'package:flutter/material.dart';
 
 import '../app_colors.dart';
 import '../models/food_item.dart';
+import '../services/app_services.dart';
 import '../services/food_library.dart';
+import '../widgets/common.dart';
 import '../widgets/food_photo.dart';
-import 'food_form_page.dart';
+import 'restaurant_list_page.dart';
 
-/// Màn hình quản lý kho món: tìm kiếm, lọc nhóm, yêu thích, ẩn món,
-/// thêm/sửa/xóa món tự tạo.
+/// Tab Món ăn: tìm kiếm, lọc nhóm, yêu thích, ẩn khỏi vòng quay,
+/// bấm vào món để xem các quán bán món đó (FR-M04, FR-M08).
 class ManageFoodsPage extends StatefulWidget {
-  const ManageFoodsPage({super.key, required this.library});
+  const ManageFoodsPage({super.key, required this.services});
 
-  final FoodLibrary library;
+  final AppServices services;
 
   @override
   State<ManageFoodsPage> createState() => _ManageFoodsPageState();
@@ -19,10 +21,10 @@ class ManageFoodsPage extends StatefulWidget {
 
 class _ManageFoodsPageState extends State<ManageFoodsPage> {
   final _searchController = TextEditingController();
-  FoodCategory? _categoryFilter;
+  String? _categorySlug;
   String _query = '';
 
-  FoodLibrary get _library => widget.library;
+  FoodLibrary get _library => widget.services.library;
 
   @override
   void dispose() {
@@ -33,79 +35,65 @@ class _ManageFoodsPageState extends State<ManageFoodsPage> {
   List<FoodItem> _visibleFoods() {
     final query = _query.trim().toLowerCase();
     return _library.allFoods
-        .where(
-          (food) =>
-              (_categoryFilter == null || food.category == _categoryFilter) &&
-              (query.isEmpty || food.name.toLowerCase().contains(query)),
-        )
+        .where((food) =>
+            (_categorySlug == null || food.category.slug == _categorySlug) &&
+            (query.isEmpty || food.name.toLowerCase().contains(query)))
         .toList(growable: false);
   }
 
-  void _showMessage(String message) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message)));
+  void _openRestaurants(FoodItem food) {
+    Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => RestaurantListPage(food: food, services: widget.services),
+    ));
   }
 
-  Future<void> _addFood() async {
-    final food = await Navigator.of(context).push<FoodItem>(
-      MaterialPageRoute(builder: (_) => FoodFormPage(library: _library)),
-    );
-    if (food == null || !mounted) {
-      return;
-    }
-    _library.addCustomFood(food);
-    _showMessage('Đã thêm "${food.name}" vào kho.');
-  }
-
-  Future<void> _editFood(FoodItem initial) async {
-    final food = await Navigator.of(context).push<FoodItem>(
-      MaterialPageRoute(
-        builder: (_) => FoodFormPage(library: _library, initial: initial),
-      ),
-    );
-    if (food == null || !mounted) {
-      return;
-    }
-    _library.updateCustomFood(food);
-    _showMessage('Đã lưu "${food.name}".');
-  }
-
-  Future<void> _deleteFood(FoodItem food) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Xóa món?'),
-        content: Text('"${food.name}" sẽ bị xóa khỏi kho. Lịch sử quay vẫn giữ.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Hủy'),
-          ),
-          FilledButton(
-            key: const Key('confirm-delete-food'),
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Xóa'),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true || !mounted) {
-      return;
-    }
-    _library.deleteCustomFood(food.id);
-    _showMessage('Đã xóa "${food.name}".');
-  }
-
-  Widget _filterChip(FoodCategory? category, String label) => Padding(
+  Widget _filterChip(String? slug, String label) => Padding(
         padding: const EdgeInsets.only(right: 8),
         child: ChoiceChip(
-          key: ValueKey('manage-filter-${category?.name ?? 'all'}'),
+          key: ValueKey('manage-filter-${slug ?? 'all'}'),
           label: Text(label),
-          selected: _categoryFilter == category,
-          onSelected: (_) => setState(() => _categoryFilter = category),
+          selected: _categorySlug == slug,
+          onSelected: (_) => setState(() => _categorySlug = slug),
         ),
       );
+
+  Widget _body(List<FoodItem> foods) {
+    if (_library.status == CatalogStatus.loading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_library.status == CatalogStatus.error) {
+      return Center(
+        child: ErrorRetry(
+          message: 'Cần kết nối mạng để tải danh sách món lần đầu.',
+          onRetry: _library.refresh,
+        ),
+      );
+    }
+    final emptyMessage = _library.allFoods.isEmpty
+        ? 'Chưa có món nào. Vui lòng quay lại sau.'
+        : 'Không có món phù hợp.';
+    return RefreshIndicator(
+      onRefresh: _library.refresh,
+      child: foods.isEmpty
+          ? ListView(children: [EmptyState(message: emptyMessage)])
+          : ListView.builder(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              itemCount: foods.length,
+              itemBuilder: (context, index) {
+                final food = foods[index];
+                return _FoodTile(
+                  food: food,
+                  favorite: _library.isFavorite(food.id),
+                  excluded: _library.isExcluded(food.id),
+                  onOpen: () => _openRestaurants(food),
+                  onToggleFavorite: () => _library.toggleFavorite(food.id),
+                  onToggleExcluded: () => _library.toggleExcluded(food.id),
+                );
+              },
+            ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -113,100 +101,63 @@ class _ManageFoodsPageState extends State<ManageFoodsPage> {
       listenable: _library,
       builder: (context, _) {
         final foods = _visibleFoods();
-        return Scaffold(
-          backgroundColor: AppColors.page,
-          appBar: AppBar(
-            backgroundColor: AppColors.page,
-            foregroundColor: AppColors.warmText,
-            title: const Text('Kho món ăn'),
-          ),
-          floatingActionButton: FloatingActionButton.extended(
-            key: const Key('add-food-button'),
-            onPressed: _addFood,
-            backgroundColor: AppColors.gold,
-            foregroundColor: AppColors.page,
-            icon: const Icon(Icons.add),
-            label: const Text('Thêm món'),
-          ),
-          body: Column(
+        return SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              const Padding(
+                padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+                child: Text(
+                  'KHO MÓN',
+                  style: TextStyle(
+                      color: AppColors.warmText, fontFamily: 'serif', fontSize: 22, fontWeight: FontWeight.w700),
+                ),
+              ),
+              if (_library.usingCachedData)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(children: [
+                    const Expanded(
+                      child: Text('Đang dùng dữ liệu đã lưu',
+                          style: TextStyle(color: AppColors.mutedText, fontSize: 12)),
+                    ),
+                    TextButton(onPressed: _library.refresh, child: const Text('Thử lại')),
+                  ]),
+                ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: TextField(
-                  key: const Key('food-search-field'),
+                  key: const Key('manage-search'),
                   controller: _searchController,
                   onChanged: (value) => setState(() => _query = value),
-                  style: const TextStyle(color: AppColors.text),
                   decoration: const InputDecoration(
-                    hintText: 'Tìm món...',
-                    hintStyle: TextStyle(color: AppColors.mutedText),
-                    prefixIcon: Icon(Icons.search, color: AppColors.mutedText),
-                    filled: true,
-                    fillColor: AppColors.chrome,
+                    prefixIcon: Icon(Icons.search),
+                    hintText: 'Tìm món',
+                    border: OutlineInputBorder(),
                     isDense: true,
-                    border: OutlineInputBorder(borderSide: BorderSide.none),
                   ),
                 ),
               ),
               SizedBox(
-                height: 44,
+                height: 52,
                 child: ListView(
                   scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
                   children: [
                     _filterChip(null, 'Tất cả'),
-                    for (final category in FoodCategory.values)
-                      _filterChip(category, category.label),
+                    for (final category in _library.categories) _filterChip(category.slug, category.name),
                   ],
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    '${foods.length} món · '
-                    '${_library.favoriteIds.length} yêu thích · '
-                    '${_library.excludedIds.length} đang ẩn',
-                    key: const Key('manage-summary'),
-                    style: const TextStyle(
-                      color: AppColors.mutedText,
-                      fontSize: 12,
-                    ),
-                  ),
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                child: Text(
+                  '${foods.length} món · ${_library.favoriteIds.length} yêu thích · '
+                  '${_library.excludedIds.length} đang ẩn',
+                  style: const TextStyle(color: AppColors.mutedText, fontSize: 12),
                 ),
               ),
-              Expanded(
-                child: foods.isEmpty
-                    ? const Center(
-                        key: Key('manage-empty'),
-                        child: Text(
-                          'Không tìm thấy món phù hợp.',
-                          style: TextStyle(color: AppColors.mutedText),
-                        ),
-                      )
-                    : ListView.builder(
-                        key: const Key('manage-food-list'),
-                        padding: const EdgeInsets.fromLTRB(16, 4, 16, 96),
-                        itemCount: foods.length,
-                        itemBuilder: (context, index) {
-                          final food = foods[index];
-                          return _FoodTile(
-                            food: food,
-                            favorite: _library.isFavorite(food.id),
-                            excluded: _library.isExcluded(food.id),
-                            onToggleFavorite: () =>
-                                _library.toggleFavorite(food.id),
-                            onToggleExcluded: () =>
-                                _library.toggleExcluded(food.id),
-                            onEdit:
-                                food.isCustom ? () => _editFood(food) : null,
-                            onDelete:
-                                food.isCustom ? () => _deleteFood(food) : null,
-                          );
-                        },
-                      ),
-              ),
+              Expanded(child: _body(foods)),
             ],
           ),
         );
@@ -220,24 +171,21 @@ class _FoodTile extends StatelessWidget {
     required this.food,
     required this.favorite,
     required this.excluded,
+    required this.onOpen,
     required this.onToggleFavorite,
     required this.onToggleExcluded,
-    this.onEdit,
-    this.onDelete,
   });
 
   final FoodItem food;
   final bool favorite;
   final bool excluded;
+  final VoidCallback onOpen;
   final VoidCallback onToggleFavorite;
   final VoidCallback onToggleExcluded;
 
-  /// Chỉ món tự tạo mới sửa/xóa được.
-  final VoidCallback? onEdit;
-  final VoidCallback? onDelete;
-
   @override
   Widget build(BuildContext context) {
+    final shops = food.restaurantCount == 0 ? 'Chưa có quán' : '${food.restaurantCount} quán';
     return Opacity(
       opacity: excluded ? 0.5 : 1,
       child: Card(
@@ -249,74 +197,63 @@ class _FoodTile extends StatelessWidget {
           borderRadius: BorderRadius.circular(4),
         ),
         clipBehavior: Clip.antiAlias,
-        child: Row(
-          children: [
-            SizedBox(width: 64, height: 64, child: FoodPhoto(food: food)),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    food.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: AppColors.text,
-                      fontWeight: FontWeight.w700,
-                      decoration: excluded ? TextDecoration.lineThrough : null,
+        child: InkWell(
+          onTap: onOpen,
+          child: Row(
+            children: [
+              SizedBox(width: 64, height: 64, child: FoodPhoto(food: food)),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      food.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: AppColors.text,
+                        fontWeight: FontWeight.w700,
+                        decoration: excluded ? TextDecoration.lineThrough : null,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    [
-                      food.category.label,
-                      formatPrice(food.price),
-                      if (food.isCustom) 'Tự tạo',
-                      if (excluded) 'Đang ẩn',
-                    ].join(' · '),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: AppColors.mutedText,
-                      fontSize: 12,
+                    const SizedBox(height: 2),
+                    Text(
+                      [
+                        food.category.name,
+                        formatPrice(food.price),
+                        shops,
+                        if (excluded) 'Đang ẩn',
+                      ].join(' · '),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(color: AppColors.mutedText, fontSize: 12),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            IconButton(
-              key: ValueKey('favorite-${food.id}'),
-              tooltip: favorite ? 'Bỏ yêu thích' : 'Yêu thích',
-              onPressed: onToggleFavorite,
-              icon: Icon(
-                favorite ? Icons.favorite : Icons.favorite_border,
-                color: favorite ? AppColors.gold : AppColors.mutedText,
+              IconButton(
+                key: ValueKey('favorite-${food.id}'),
+                tooltip: favorite ? 'Bỏ yêu thích' : 'Yêu thích',
+                onPressed: onToggleFavorite,
+                icon: Icon(
+                  favorite ? Icons.favorite : Icons.favorite_border,
+                  color: favorite ? AppColors.gold : AppColors.mutedText,
+                ),
               ),
-            ),
-            IconButton(
-              key: ValueKey('exclude-${food.id}'),
-              tooltip: excluded ? 'Hiện lại món' : 'Ẩn khỏi vòng quay',
-              onPressed: onToggleExcluded,
-              icon: Icon(
-                excluded ? Icons.visibility_off : Icons.visibility_outlined,
-                color: AppColors.mutedText,
+              IconButton(
+                key: ValueKey('exclude-${food.id}'),
+                tooltip: excluded ? 'Hiện lại món' : 'Ẩn khỏi vòng quay',
+                onPressed: onToggleExcluded,
+                icon: Icon(
+                  excluded ? Icons.visibility_off : Icons.visibility_outlined,
+                  color: AppColors.mutedText,
+                ),
               ),
-            ),
-            if (onEdit != null || onDelete != null)
-              PopupMenuButton<String>(
-                key: ValueKey('menu-${food.id}'),
-                iconColor: AppColors.mutedText,
-                onSelected: (value) =>
-                    value == 'edit' ? onEdit?.call() : onDelete?.call(),
-                itemBuilder: (_) => const [
-                  PopupMenuItem(value: 'edit', child: Text('Sửa')),
-                  PopupMenuItem(value: 'delete', child: Text('Xóa')),
-                ],
-              )
-            else
-              const SizedBox(width: 8),
-          ],
+              const Icon(Icons.chevron_right, color: AppColors.mutedText),
+              const SizedBox(width: 4),
+            ],
+          ),
         ),
       ),
     );

@@ -1,0 +1,15 @@
+<%#
+  Một ô nhập có label và lỗi. Tham số: name, label, value, type ('text'|'number'|'textarea'|'password'|'url'|'date'),
+  required, help, attrs (chuỗi thuộc tính thêm, chỉ dùng hằng do code viết).
+%>
+<% const id = 'f-' + name.replace(/[^a-zA-Z0-9]/g, '-'); const err = fields && fields[name]; const t = typeof type === 'undefined' ? 'text' : type; %>
+<div class="mb-3">
+  <label class="form-label" for="<%= id %>"><%= label %><% if (typeof required !== 'undefined' && required) { %> <span class="text-danger" aria-hidden="true">*</span><% } %></label>
+  <% if (t === 'textarea') { %>
+    <textarea class="form-control<%= err ? ' is-invalid' : '' %>" id="<%= id %>" name="<%= name %>" rows="3"<%= err ? ' aria-describedby=' + id + '-err' : '' %>><%= value == null ? '' : value %></textarea>
+  <% } else { %>
+    <input class="form-control<%= err ? ' is-invalid' : '' %>" id="<%= id %>" name="<%= name %>" type="<%= t %>" value="<%= value == null ? '' : value %>"<%= err ? ' aria-describedby=' + id + '-err' : '' %><%- typeof attrs !== 'undefined' ? ' ' + attrs : '' %> />
+  <% } %>
+  <% if (err) { %><div class="invalid-feedback" id="<%= id %>-err"><%= err %></div><% } %>
+  <% if (typeof help !== 'undefined' && help) { %><div class="form-text"><%= help %></div><% } %>
+</div>

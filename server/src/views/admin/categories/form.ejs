@@ -1,0 +1,32 @@
+<%- include('../../partials/header') %>
+<main id="main" class="container py-4">
+  <h1 class="h4 mb-3"><%= title %></h1>
+  <%- include('../../partials/flash') %>
+  <form method="post" action="<%= action %>" class="bg-white border rounded p-4 card-narrow" novalidate>
+    <input type="hidden" name="_csrf" value="<%= csrf() %>" />
+    <%- include('../../partials/field', { name: 'name', label: 'Tên nhóm', value: values.name, required: true }) %>
+    <%- include('../../partials/field', { name: 'slug', label: 'Mã (slug)', value: values.slug, required: true, help: 'Ví dụ: mon-chinh. Dùng trong app, nên hạn chế đổi.' }) %>
+    <div class="mb-3">
+      <label class="form-label" for="f-icon">Icon</label>
+      <select class="form-select<%= fields.icon ? ' is-invalid' : '' %>" id="f-icon" name="icon">
+        <% for (const icon of icons) { %><option value="<%= icon %>"<%= values.icon === icon ? ' selected' : '' %>><%= icon %></option><% } %>
+      </select>
+      <% if (fields.icon) { %><div class="invalid-feedback"><%= fields.icon %></div><% } %>
+    </div>
+    <div class="form-check mb-3">
+      <input class="form-check-input" type="checkbox" id="f-meals" name="usesMealPeriods"<%= values.usesMealPeriods === true || values.usesMealPeriods === 'on' ? ' checked' : '' %> />
+      <label class="form-check-label" for="f-meals">Món trong nhóm chọn bữa ăn (sáng, trưa, tối, đêm)</label>
+    </div>
+    <%- include('../../partials/field', { name: 'sortOrder', label: 'Thứ tự hiển thị', value: values.sortOrder, type: 'number' }) %>
+    <div class="mb-4">
+      <label class="form-label" for="f-status">Trạng thái</label>
+      <select class="form-select" id="f-status" name="status">
+        <option value="active"<%= values.status !== 'hidden' ? ' selected' : '' %>>Hiển thị</option>
+        <option value="hidden"<%= values.status === 'hidden' ? ' selected' : '' %>>Ẩn</option>
+      </select>
+    </div>
+    <button class="btn btn-primary" type="submit">Lưu</button>
+    <a class="btn btn-link" href="/admin/categories">Hủy</a>
+  </form>
+</main>
+<%- include('../../partials/footer') %>

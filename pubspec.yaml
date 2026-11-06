@@ -36,6 +36,10 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   shared_preferences: ^2.5.6
+  http: ^1.6.0
+  flutter_secure_storage: ^11.2.0
+  cached_network_image: ^4.0.6
+  image_picker: ^1.2.4
 
 dev_dependencies:
   flutter_test:
@@ -59,8 +63,7 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
-  assets:
-    - assets/images/
+  # Ảnh món lấy từ server; atlas cũ đã chép sang server/seed/legacy-foods.
 
   # To add assets to your application, add an assets section, like this:
   # assets:

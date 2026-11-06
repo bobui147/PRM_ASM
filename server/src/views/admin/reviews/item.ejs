@@ -1,0 +1,80 @@
+<%# Một review trong danh sách admin. Tham số: item (DTO + raw), pending, reasons, durations, back. %>
+<% const raw = item.raw; const statusColor = { pending: 'warning', published: 'success', rejected: 'danger', hidden: 'secondary' }[item.status]; %>
+<article class="bg-white border rounded p-3 mb-3">
+  <div class="d-flex flex-wrap justify-content-between gap-2 mb-2">
+    <div>
+      <% if (pending) { %>
+        <input class="form-check-input bulk-id me-2" type="checkbox" name="ids" value="<%= item.id %>" form="bulk-form" id="sel-<%= item.id %>" aria-label="Chọn review #<%= item.id %>" />
+      <% } %>
+      <strong>#<%= item.id %></strong>
+      · <a href="/admin/restaurants/<%= item.restaurantId %>/edit"><%= raw.restaurant_name %></a>
+      · <span aria-label="<%= item.rating %> sao"><%= '★'.repeat(item.rating) %><%= '☆'.repeat(5 - item.rating) %></span>
+      <span class="badge text-bg-<%= statusColor %> ms-1"><%= labels.REVIEW_STATUS_LABELS[item.status] %></span>
+      <% if (item.edited) { %><span class="badge text-bg-info ms-1">Đã sửa sau khi duyệt</span><% } %>
+      <% if (raw.open_reports > 0) { %><span class="badge text-bg-danger ms-1"><%= raw.open_reports %> báo cáo đang mở</span><% } %>
+    </div>
+    <div class="small text-secondary">Gửi lúc <%= fmtDate(item.updatedAt) %></div>
+  </div>
+  <p class="small mb-2">
+    <a href="/admin/users/<%= item.author.id %>"><%= item.author.displayName %></a> (<%= raw.author_email %>)
+    · <%= raw.author_published %> đã duyệt · <%= raw.author_rejected %> bị từ chối
+    <% if (raw.author_spam >= 3) { %><span class="badge text-bg-danger ms-1">Nghi spam</span><% } %>
+  </p>
+  <p class="pre-line mb-2"><%= item.comment %></p>
+  <p class="small text-secondary mb-2">
+    Ngày ghé <%= item.visitDate %><% if (item.food) { %> · Món: <%= item.food.name %><% } %><% if (item.amountSpent) { %> · Chi phí <%= fmtMoney(item.amountSpent) %><% } %>
+  </p>
+  <% if (item.images.length > 0) { %>
+    <div class="d-flex gap-2 mb-2">
+      <% for (const img of item.images) { %>
+        <a href="<%= img.url %>" target="_blank" rel="noopener"><img class="thumb" src="<%= img.thumbUrl %>" alt="Ảnh review #<%= item.id %>" /></a>
+      <% } %>
+    </div>
+  <% } %>
+  <% if (item.rejectReason || item.moderationNote) { %>
+    <p class="small text-danger mb-2"><%= item.rejectReasonLabel || '' %><%= item.moderationNote ? ' · ' + item.moderationNote : '' %></p>
+  <% } %>
+
+  <div class="d-flex flex-wrap gap-2 align-items-end border-top pt-2">
+    <% if (item.status === 'pending') { %>
+      <form method="post" action="/admin/reviews/<%= item.id %>/approve">
+        <input type="hidden" name="_csrf" value="<%= csrf() %>" /><input type="hidden" name="back" value="<%= back %>" />
+        <button class="btn btn-sm btn-success" type="submit">Duyệt</button>
+      </form>
+    <% } %>
+    <% if (item.status === 'pending' || item.status === 'published') { %>
+      <% const act = item.status === 'pending' ? 'reject' : 'hide'; %>
+      <form method="post" action="/admin/reviews/<%= item.id %>/<%= act %>" class="d-flex flex-wrap gap-2 align-items-end">
+        <input type="hidden" name="_csrf" value="<%= csrf() %>" /><input type="hidden" name="back" value="<%= back %>" />
+        <% if (act === 'reject') { %>
+          <label class="visually-hidden" for="reason-<%= item.id %>">Lý do</label>
+          <select class="form-select form-select-sm w-auto" id="reason-<%= item.id %>" name="reason" required>
+            <option value="">Lý do từ chối...</option>
+            <% for (const r of reasons) { %><option value="<%= r %>"><%= labels.REJECT_REASON_LABELS[r] %></option><% } %>
+          </select>
+        <% } %>
+        <label class="visually-hidden" for="note-<%= item.id %>">Ghi chú</label>
+        <input class="form-control form-control-sm w-auto" id="note-<%= item.id %>" name="note" maxlength="300" placeholder="Ghi chú (tác giả thấy)" />
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="block-<%= item.id %>" name="block" />
+          <label class="form-check-label small" for="block-<%= item.id %>">Khóa tác giả</label>
+        </div>
+        <label class="visually-hidden" for="dur-<%= item.id %>">Thời hạn khóa</label>
+        <select class="form-select form-select-sm w-auto" id="dur-<%= item.id %>" name="duration">
+          <% for (const [key, label] of Object.entries(durations)) { %><option value="<%= key %>"<%= key === '7' ? ' selected' : '' %>><%= label %></option><% } %>
+        </select>
+        <button class="btn btn-sm btn-outline-danger" type="submit"><%= act === 'reject' ? 'Từ chối' : 'Ẩn' %></button>
+      </form>
+    <% } %>
+    <% if (item.status === 'hidden') { %>
+      <form method="post" action="/admin/reviews/<%= item.id %>/unhide">
+        <input type="hidden" name="_csrf" value="<%= csrf() %>" /><input type="hidden" name="back" value="<%= back %>" />
+        <button class="btn btn-sm btn-outline-success" type="submit">Hiện lại</button>
+      </form>
+    <% } %>
+    <form method="post" action="/admin/reviews/<%= item.id %>/delete" class="ms-auto" data-confirm="Xóa vĩnh viễn review #<%= item.id %> và ảnh?">
+      <input type="hidden" name="_csrf" value="<%= csrf() %>" /><input type="hidden" name="back" value="<%= back %>" />
+      <button class="btn btn-sm btn-link text-danger" type="submit">Xóa vĩnh viễn</button>
+    </form>
+  </div>
+</article>

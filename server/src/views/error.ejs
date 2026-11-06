@@ -1,0 +1,18 @@
+<%- include('partials/header') %>
+<main id="main" class="container py-5">
+  <div class="card shadow-sm mx-auto card-narrow">
+    <div class="card-body p-4">
+      <p class="text-secondary mb-1">Lỗi <%= status %></p>
+      <h1 class="h3 mb-3"><%= title %></h1>
+      <p class="mb-4"><%= message %></p>
+      <a class="btn btn-primary" href="/admin">Về trang quản trị</a>
+      <% if (typeof stack !== 'undefined' && stack) { %>
+        <details class="mt-4">
+          <summary>Chi tiết lỗi (chỉ hiện ở môi trường dev)</summary>
+          <pre class="small bg-light p-3 mt-2 overflow-auto"><%= stack %></pre>
+        </details>
+      <% } %>
+    </div>
+  </div>
+</main>
+<%- include('partials/footer') %>

@@ -2,58 +2,131 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
-import '../data/sample_foods.dart';
 import '../models/food_item.dart';
 import '../models/spin_record.dart';
+import 'api_client.dart';
 import 'app_storage.dart';
+import 'catalog_repository.dart';
 
 /// Số lượt quay tối đa được giữ trong lịch sử.
 const maxHistoryLength = 50;
 
-/// Món đã quay trong số ngày lịch này (hôm nay, hôm qua, hôm kia)
-/// được tính là "vừa ăn" và bị giảm tỉ lệ ra.
+/// Món đã quay trong số ngày lịch này được tính là "vừa ăn".
 const recentDayWindow = 3;
 
-/// Trạng thái dùng chung giữa các màn hình: kho món, yêu thích, món ẩn,
-/// lịch sử quay và lựa chọn bộ lọc. Mọi thay đổi được ghi xuống thiết bị
-/// nếu có [AppStorage]; không có storage thì chỉ giữ trong bộ nhớ (dùng cho test).
-class FoodLibrary extends ChangeNotifier {
-  FoodLibrary.inMemory({this.baseFoods = sampleFoods}) : _storage = null;
+enum CatalogStatus { loading, ready, error }
 
-  FoodLibrary.load(AppStorage storage, {this.baseFoods = sampleFoods})
-      : _storage = storage {
-    final baseIds = {for (final food in baseFoods) food.id};
-    _customFoods
-        .addAll(storage.readCustomFoods().where((f) => !baseIds.contains(f.id)));
-    _favoriteIds.addAll(storage.readFavorites());
-    _excludedIds.addAll(storage.readExcluded());
-    _history.addAll(storage.readHistory().take(maxHistoryLength));
-    _category = storage.readCategory() ?? _category;
-    _budget = storage.readBudget() ?? _budget;
+/// Trạng thái dùng chung: danh mục món từ server (kèm cache), yêu thích,
+/// món ẩn, lịch sử quay và lựa chọn bộ lọc (lưu trên máy).
+class FoodLibrary extends ChangeNotifier {
+  FoodLibrary({AppStorage? storage, CatalogRepository? repository})
+      : _storage = storage,
+        _repository = repository {
+    final storage = _storage;
+    if (storage != null) {
+      _favoriteIds.addAll(storage.readFavorites());
+      _excludedIds.addAll(storage.readExcluded());
+      _history.addAll(storage.readHistory().take(maxHistoryLength));
+      _categorySlug = storage.readCategory();
+      _budget = storage.readBudget() ?? _budget;
+    }
+    final cached = _repository?.readCached();
+    if (cached != null) {
+      _catalog = cached;
+      _status = CatalogStatus.ready;
+    }
   }
 
+  /// Dùng cho test: danh mục cố định, không lưu, không gọi mạng.
+  FoodLibrary.inMemory({Catalog catalog = Catalog.empty})
+      : _storage = null,
+        _repository = null,
+        _catalog = catalog,
+        _status = CatalogStatus.ready;
+
   final AppStorage? _storage;
-  final List<FoodItem> baseFoods;
-  final List<FoodItem> _customFoods = [];
+  final CatalogRepository? _repository;
+  Catalog _catalog = Catalog.empty;
+  Catalog? _pending;
+  CatalogStatus _status = CatalogStatus.loading;
+  String? _errorMessage;
+  bool _locked = false;
   final Set<String> _favoriteIds = {};
   final Set<String> _excludedIds = {};
   final List<SpinRecord> _history = [];
-  FoodCategory _category = FoodCategory.lunch;
+  String? _categorySlug;
   FoodBudget _budget = FoodBudget.fifty;
 
-  List<FoodItem> get allFoods =>
-      List.unmodifiable([...baseFoods, ..._customFoods]);
-  List<FoodItem> get customFoods => List.unmodifiable(_customFoods);
+  CatalogStatus get status => _status;
+  String? get errorMessage => _errorMessage;
+
+  /// Đang hiển thị dữ liệu đã lưu vì lần tải gần nhất bị lỗi.
+  bool get usingCachedData => _errorMessage != null && _status == CatalogStatus.ready;
+
+  List<FoodCategory> get categories => _catalog.categories;
+  List<FoodItem> get allFoods => _catalog.foods;
   Set<String> get favoriteIds => Set.unmodifiable(_favoriteIds);
   Set<String> get excludedIds => Set.unmodifiable(_excludedIds);
-
-  /// Lịch sử, lượt mới nhất đứng đầu.
   List<SpinRecord> get history => List.unmodifiable(_history);
-  FoodCategory get category => _category;
   FoodBudget get budget => _budget;
+
+  /// Nhóm đang chọn; nhóm đã lưu không còn tồn tại thì lấy nhóm đầu tiên.
+  FoodCategory? get category {
+    final list = _catalog.categories;
+    if (list.isEmpty) return null;
+    return list.firstWhere((c) => c.slug == _categorySlug, orElse: () => list.first);
+  }
+
+  FoodItem? foodById(String id) {
+    for (final food in _catalog.foods) {
+      if (food.id == id) return food;
+    }
+    return null;
+  }
 
   bool isFavorite(String id) => _favoriteIds.contains(id);
   bool isExcluded(String id) => _excludedIds.contains(id);
+
+  /// Khi đang quay hoặc đang mở kết quả, danh mục mới được giữ lại và
+  /// chỉ áp dụng khi mở khóa (FR-M01).
+  set locked(bool value) {
+    _locked = value;
+    final pending = _pending;
+    if (!value && pending != null) {
+      _pending = null;
+      _catalog = pending;
+      notifyListeners();
+    }
+  }
+
+  /// Tải danh mục từ server. Lỗi mạng mà đã có cache thì vẫn dùng cache.
+  Future<void> refresh() async {
+    final repository = _repository;
+    if (repository == null) return;
+    if (_status == CatalogStatus.error) {
+      _status = CatalogStatus.loading;
+      notifyListeners();
+    }
+    try {
+      final hasData = _status == CatalogStatus.ready;
+      final (result, catalog) = await repository.fetch(
+        knownVersion: hasData ? _catalog.version : null,
+      );
+      _errorMessage = null;
+      if (result == CatalogRefresh.updated && catalog != null) {
+        if (_locked) {
+          _pending = catalog;
+        } else {
+          _catalog = catalog;
+        }
+      }
+      _status = CatalogStatus.ready;
+    } on ApiException catch (error) {
+      _errorMessage = error.message;
+      if (_status != CatalogStatus.ready) _status = CatalogStatus.error;
+    }
+    notifyListeners();
+  }
 
   /// Món quay trong [recentDayWindow] ngày lịch gần nhất tính tới [now].
   Set<String> recentFoodIds(DateTime now) {
@@ -61,8 +134,7 @@ class FoodLibrary extends ChangeNotifier {
     return {
       for (final record in _history)
         if (today
-                .difference(DateTime(
-                    record.time.year, record.time.month, record.time.day))
+                .difference(DateTime(record.time.year, record.time.month, record.time.day))
                 .inDays <
             recentDayWindow)
           record.foodId,
@@ -71,24 +143,17 @@ class FoodLibrary extends ChangeNotifier {
 
   /// Món đủ điều kiện quay: đúng nhóm/bữa và không bị ẩn.
   List<FoodItem> eligibleFoods(MealPeriod mealPeriod) =>
-      filterFoods(allFoods, _category, mealPeriod)
+      filterFoods(allFoods, category, mealPeriod)
           .where((food) => !_excludedIds.contains(food.id))
           .toList(growable: false);
 
-  bool nameExists(String name, {String? exceptId}) {
-    final normalized = name.trim().toLowerCase();
-    return allFoods.any(
-      (food) => food.id != exceptId && food.name.toLowerCase() == normalized,
-    );
-  }
-
   void setCategory(FoodCategory category) {
-    if (category == _category) {
+    if (category.slug == _categorySlug) {
       return;
     }
-    _category = category;
+    _categorySlug = category.slug;
     notifyListeners();
-    _persist((storage) => storage.writeCategory(category));
+    _persist((storage) => storage.writeCategory(category.slug));
   }
 
   void setBudget(FoodBudget budget) {
@@ -118,42 +183,6 @@ class FoodLibrary extends ChangeNotifier {
     _persist((storage) => storage.writeExcluded(snapshot));
   }
 
-  void addCustomFood(FoodItem food) {
-    _customFoods.add(food);
-    notifyListeners();
-    _saveCustomFoods();
-  }
-
-  void updateCustomFood(FoodItem food) {
-    final index = _customFoods.indexWhere((item) => item.id == food.id);
-    if (index < 0) {
-      return;
-    }
-    _customFoods[index] = food;
-    notifyListeners();
-    _saveCustomFoods();
-  }
-
-  void deleteCustomFood(String id) {
-    final before = _customFoods.length;
-    _customFoods.removeWhere((food) => food.id == id);
-    if (_customFoods.length == before) {
-      return;
-    }
-    final favoriteChanged = _favoriteIds.remove(id);
-    final excludedChanged = _excludedIds.remove(id);
-    notifyListeners();
-    _saveCustomFoods();
-    if (favoriteChanged) {
-      final snapshot = Set.of(_favoriteIds);
-      _persist((storage) => storage.writeFavorites(snapshot));
-    }
-    if (excludedChanged) {
-      final snapshot = Set.of(_excludedIds);
-      _persist((storage) => storage.writeExcluded(snapshot));
-    }
-  }
-
   void recordSpin(FoodItem food, DateTime time) {
     _history.insert(0, SpinRecord.fromFood(food, time));
     if (_history.length > maxHistoryLength) {
@@ -170,11 +199,6 @@ class FoodLibrary extends ChangeNotifier {
     _history.clear();
     notifyListeners();
     _saveHistory();
-  }
-
-  void _saveCustomFoods() {
-    final snapshot = List.of(_customFoods);
-    _persist((storage) => storage.writeCustomFoods(snapshot));
   }
 
   void _saveHistory() {

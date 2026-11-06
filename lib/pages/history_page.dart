@@ -148,13 +148,16 @@ class _HistoryTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(4),
       ),
       child: ListTile(
-        leading: Icon(record.category.icon, color: AppColors.gold),
+        leading: Icon(record.icon, color: AppColors.gold),
         title: Text(
           record.foodName,
           style: const TextStyle(color: AppColors.text),
         ),
         subtitle: Text(
-          '${record.category.label} · ${formatSpinTime(record.time, now)}',
+          [
+            if (record.categoryName.isNotEmpty) record.categoryName,
+            formatSpinTime(record.time, now),
+          ].join(' · '),
           style: const TextStyle(color: AppColors.mutedText),
         ),
         trailing: Text(

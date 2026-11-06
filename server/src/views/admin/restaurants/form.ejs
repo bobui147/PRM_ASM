@@ -1,0 +1,59 @@
+<%- include('../../partials/header') %>
+<% const v = values || {}; const tagValues = asArray(v.tags); const r = typeof restaurant !== 'undefined' ? restaurant : null; %>
+<main id="main" class="container py-4">
+  <a class="small" href="/admin/restaurants">&larr; Quán ăn</a>
+  <h1 class="h4 my-3"><%= title %></h1>
+  <%- include('../../partials/flash') %>
+  <div class="row g-4">
+    <div class="col-lg-7">
+      <form method="post" action="<%= action %>" enctype="multipart/form-data" class="bg-white border rounded p-4" novalidate>
+        <input type="hidden" name="_csrf" value="<%= csrf() %>" />
+        <%- include('../../partials/field', { name: 'name', label: 'Tên quán', value: v.name, required: true }) %>
+        <div class="mb-3">
+          <label class="form-label" for="f-area">Khu vực <span class="text-danger" aria-hidden="true">*</span></label>
+          <select class="form-select<%= fields.area ? ' is-invalid' : '' %>" id="f-area" name="area">
+            <option value="">Chọn khu vực</option>
+            <% for (const a of areas) { %><option value="<%= a %>"<%= v.area === a ? ' selected' : '' %>><%= labels.AREA_LABELS[a] %></option><% } %>
+          </select>
+          <% if (fields.area) { %><div class="invalid-feedback"><%= fields.area %></div><% } %>
+        </div>
+        <%- include('../../partials/field', { name: 'address', label: 'Địa chỉ', value: v.address, required: true }) %>
+        <%- include('../../partials/field', { name: 'googleMapsUrl', label: 'Link Google Maps', value: v.googleMapsUrl, type: 'url', help: 'Để trống thì app tìm theo tên quán + Hòa Lạc' }) %>
+        <div class="row">
+          <div class="col-md-6"><%- include('../../partials/field', { name: 'phone', label: 'Số điện thoại', value: v.phone }) %></div>
+          <div class="col-md-6"><%- include('../../partials/field', { name: 'openingHours', label: 'Giờ mở cửa', value: v.openingHours, help: 'Ví dụ 06:00–22:00' }) %></div>
+          <div class="col-md-6"><%- include('../../partials/field', { name: 'priceMin', label: 'Giá thấp nhất / người', value: v.priceMin, type: 'number', required: true, attrs: 'min="0" step="1000"' }) %></div>
+          <div class="col-md-6"><%- include('../../partials/field', { name: 'priceMax', label: 'Giá cao nhất / người', value: v.priceMax, type: 'number', required: true, attrs: 'min="0" step="1000"' }) %></div>
+        </div>
+        <fieldset class="mb-3">
+          <legend class="form-label fs-6">Nhãn</legend>
+          <% for (const t of tags) { %>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="checkbox" id="tag-<%= t %>" name="tags" value="<%= t %>"<%= tagValues.includes(t) ? ' checked' : '' %> />
+              <label class="form-check-label" for="tag-<%= t %>"><%= labels.TAG_LABELS[t] %></label>
+            </div>
+          <% } %>
+        </fieldset>
+        <%- include('../../partials/field', { name: 'description', label: 'Mô tả', value: v.description, type: 'textarea', help: 'Tối đa 500 ký tự' }) %>
+        <div class="mb-3">
+          <label class="form-label" for="f-cover">Ảnh bìa</label>
+          <input class="form-control<%= fields.cover ? ' is-invalid' : '' %>" type="file" id="f-cover" name="cover" accept="image/jpeg,image/png,image/webp" />
+          <% if (fields.cover) { %><div class="invalid-feedback"><%= fields.cover %></div><% } %>
+          <div class="form-text">JPEG, PNG hoặc WebP, tối đa 5 MB.</div>
+        </div>
+        <div class="mb-4">
+          <label class="form-label" for="f-status">Trạng thái</label>
+          <select class="form-select" id="f-status" name="status">
+            <option value="active"<%= v.status !== 'hidden' ? ' selected' : '' %>>Hiển thị</option>
+            <option value="hidden"<%= v.status === 'hidden' ? ' selected' : '' %>>Ẩn (tạm ngừng)</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" type="submit">Lưu</button>
+      </form>
+    </div>
+    <% if (r) { %>
+      <%- include('menu', { r }) %>
+    <% } %>
+  </div>
+</main>
+<%- include('../../partials/footer') %>

@@ -1,0 +1,57 @@
+<%- include('../partials/header') %>
+<main id="main" class="container-fluid py-4">
+  <%- include('../partials/flash') %>
+  <h1 class="h4 mb-3">Dashboard</h1>
+  <%
+    const cards = [
+      ['Review chờ duyệt', stats.pending_reviews, '/admin/reviews/pending'],
+      ['Báo cáo đang mở', stats.open_reports, '/admin/reports'],
+      ['Người dùng', stats.users, '/admin/users'],
+      ['Người dùng bị khóa', stats.blocked_users, '/admin/users?status=blocked'],
+      ['Món ăn', stats.foods, '/admin/foods'],
+      ['Quán đang hoạt động', stats.active_restaurants, '/admin/restaurants'],
+    ];
+  %>
+  <div class="row g-3 mb-4">
+    <% for (const [label, value, href] of cards) { %>
+      <div class="col-6 col-md-4 col-xl-2">
+        <a class="card text-decoration-none h-100" href="<%= href %>">
+          <div class="card-body">
+            <div class="text-secondary small"><%= label %></div>
+            <div class="fs-3 fw-semibold"><%= value %></div>
+          </div>
+        </a>
+      </div>
+    <% } %>
+  </div>
+  <div class="row g-3">
+    <div class="col-lg-5">
+      <div class="card h-100">
+        <div class="card-header">Review có từ 3 báo cáo trở lên</div>
+        <ul class="list-group list-group-flush">
+          <% if (hotReports.length === 0) { %><li class="list-group-item text-secondary">Không có.</li><% } %>
+          <% for (const item of hotReports) { %>
+            <li class="list-group-item d-flex justify-content-between">
+              <a href="/admin/reports#review-<%= item.id %>">Review #<%= item.id %> · <%= item.restaurant_name %></a>
+              <span class="badge text-bg-danger"><%= item.report_count %> báo cáo</span>
+            </li>
+          <% } %>
+        </ul>
+      </div>
+    </div>
+    <div class="col-lg-7">
+      <div class="card h-100">
+        <div class="card-header d-flex justify-content-between"><span>Thao tác gần nhất</span><a href="/admin/audit-logs">Xem tất cả</a></div>
+        <ul class="list-group list-group-flush">
+          <% if (logs.length === 0) { %><li class="list-group-item text-secondary">Chưa có thao tác.</li><% } %>
+          <% for (const log of logs) { %>
+            <li class="list-group-item small">
+              <span class="text-secondary"><%= fmtDate(log.created_at) %></span> · <strong><%= log.username || '(đã xóa)' %></strong> · <%= log.summary %>
+            </li>
+          <% } %>
+        </ul>
+      </div>
+    </div>
+  </div>
+</main>
+<%- include('../partials/footer') %>

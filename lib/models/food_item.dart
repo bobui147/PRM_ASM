@@ -3,29 +3,78 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 enum MealPeriod {
-  lateNight('Ăn đêm'),
-  breakfast('Ăn sáng'),
-  lunch('Ăn trưa'),
-  dinner('Ăn tối');
+  lateNight('Ăn đêm', 'late_night'),
+  breakfast('Ăn sáng', 'breakfast'),
+  lunch('Ăn trưa', 'lunch'),
+  dinner('Ăn tối', 'dinner');
 
-  const MealPeriod(this.label);
+  const MealPeriod(this.label, this.apiName);
 
   final String label;
+
+  /// Giá trị server dùng (requirements §12.3).
+  final String apiName;
 
   MealPeriod get next =>
       MealPeriod.values[(index + 1) % MealPeriod.values.length];
+
+  static MealPeriod? fromApi(Object? value) {
+    for (final meal in values) {
+      if (meal.apiName == value) return meal;
+    }
+    return null;
+  }
 }
 
-enum FoodCategory {
-  lunch('Món chính', Icons.restaurant),
-  drink('Đồ uống', Icons.local_cafe),
-  snack('Ăn vặt', Icons.fastfood),
-  drinking('Món nhậu', Icons.sports_bar);
+/// Icon app hỗ trợ cho nhóm món (khớp danh sách ở web admin, FR-A03).
+const _categoryIcons = <String, IconData>{
+  'restaurant': Icons.restaurant,
+  'local_cafe': Icons.local_cafe,
+  'fastfood': Icons.fastfood,
+  'sports_bar': Icons.sports_bar,
+  'icecream': Icons.icecream,
+  'ramen_dining': Icons.ramen_dining,
+  'bakery_dining': Icons.bakery_dining,
+  'local_bar': Icons.local_bar,
+};
 
-  const FoodCategory(this.label, this.icon);
+IconData iconForCategory(String? key) => _categoryIcons[key] ?? Icons.restaurant;
 
-  final String label;
-  final IconData icon;
+/// Nhóm món do admin quản lý trên server.
+class FoodCategory {
+  const FoodCategory({
+    required this.slug,
+    required this.name,
+    required this.iconKey,
+    required this.usesMealPeriods,
+  });
+
+  final String slug;
+  final String name;
+  final String iconKey;
+  final bool usesMealPeriods;
+
+  String get label => name;
+  IconData get icon => iconForCategory(iconKey);
+
+  static FoodCategory? tryFromJson(Object? json) {
+    if (json is! Map) return null;
+    final slug = json['slug'];
+    final name = json['name'];
+    if (slug is! String || name is! String) return null;
+    return FoodCategory(
+      slug: slug,
+      name: name,
+      iconKey: json['icon'] as String? ?? 'restaurant',
+      usesMealPeriods: json['usesMealPeriods'] == true,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) => other is FoodCategory && other.slug == slug;
+
+  @override
+  int get hashCode => slug.hashCode;
 }
 
 enum FoodRarity {
@@ -53,6 +102,7 @@ enum FoodBudget {
   final int? targetPrice;
 }
 
+/// Món ăn lấy từ `GET /catalog`. `id` là id số của server dạng chuỗi.
 class FoodItem {
   const FoodItem({
     required this.id,
@@ -60,9 +110,11 @@ class FoodItem {
     required this.category,
     required this.price,
     required this.rarity,
-    required this.imageIndex,
-    this.mealPeriods = const {MealPeriod.lunch, MealPeriod.dinner},
-    this.isCustom = false,
+    this.mealPeriods = const {},
+    this.imageUrl,
+    this.thumbUrl,
+    this.description,
+    this.restaurantCount = 0,
   });
 
   final String id;
@@ -70,74 +122,61 @@ class FoodItem {
   final FoodCategory category;
   final int price;
   final FoodRarity rarity;
-  final int imageIndex;
   final Set<MealPeriod> mealPeriods;
+  final String? imageUrl;
+  final String? thumbUrl;
+  final String? description;
+  final int restaurantCount;
 
-  /// Món do người dùng tự thêm; không có ảnh trong atlas.
-  final bool isCustom;
-
-  int get imageCell => imageIndex % 6;
-
-  Map<String, Object?> toJson() => {
-        'id': id,
-        'name': name,
-        'category': category.name,
-        'price': price,
-        'rarity': rarity.name,
-        'mealPeriods': [for (final meal in mealPeriods) meal.name],
-      };
-
-  /// Đọc món tự tạo đã lưu. Trả về null nếu dữ liệu hỏng hoặc sai định dạng.
-  static FoodItem? tryFromJson(Object? json) {
-    if (json is! Map) {
+  /// Đọc một món trong `/catalog`; trả null nếu dữ liệu hỏng hoặc nhóm không tồn tại.
+  static FoodItem? tryFromJson(
+    Object? json,
+    Map<String, FoodCategory> categories,
+  ) {
+    if (json is! Map) return null;
+    final id = json['id'];
+    final name = json['name'];
+    final price = json['referencePrice'];
+    final category = categories[json['categorySlug']];
+    if (id == null || name is! String || price is! num || category == null) {
       return null;
     }
-    try {
-      final name = json['name'] as String;
-      final price = json['price'] as int;
-      if (name.trim().isEmpty || price <= 0) {
-        return null;
+    final meals = <MealPeriod>{};
+    final rawMeals = json['mealPeriods'];
+    if (rawMeals is List) {
+      for (final value in rawMeals) {
+        final meal = MealPeriod.fromApi(value);
+        if (meal != null) meals.add(meal);
       }
-      final meals = json['mealPeriods'] as List? ?? const [];
-      return FoodItem(
-        id: json['id'] as String,
-        name: name,
-        category: FoodCategory.values.byName(json['category'] as String),
-        price: price,
-        rarity: FoodRarity.values.byName(json['rarity'] as String),
-        imageIndex: 0,
-        mealPeriods: {
-          for (final meal in meals) MealPeriod.values.byName(meal as String),
-        },
-        isCustom: true,
-      );
-    } catch (_) {
-      return null;
     }
-  }
-
-  String get imageAsset {
-    final sheet = imageIndex ~/ 6 + 1;
-    final suffix = sheet == 1 ? '' : '-$sheet';
-    return switch (category) {
-      FoodCategory.lunch => 'assets/images/foods-lunch$suffix.png',
-      FoodCategory.drink => 'assets/images/foods-drinks$suffix.png',
-      FoodCategory.snack => 'assets/images/foods-snacks$suffix.png',
-      FoodCategory.drinking => 'assets/images/foods-drinking$suffix.png',
-    };
+    return FoodItem(
+      id: '$id',
+      name: name,
+      category: category,
+      price: price.toInt(),
+      rarity: FoodRarity.values.asNameMap()[json['rarity']] ??
+          rarityForPrice(price.toInt()),
+      mealPeriods: meals,
+      imageUrl: json['imageUrl'] as String?,
+      thumbUrl: json['thumbUrl'] as String?,
+      description: json['description'] as String?,
+      restaurantCount: (json['restaurantCount'] as num?)?.toInt() ?? 0,
+    );
   }
 }
 
+/// Món đủ điều kiện theo nhóm và bữa (bữa chỉ áp dụng cho nhóm dùng bữa ăn).
 List<FoodItem> filterFoods(
   Iterable<FoodItem> foods,
-  FoodCategory category,
+  FoodCategory? category,
   MealPeriod mealPeriod,
 ) {
+  if (category == null) return const [];
   return foods
       .where(
         (food) =>
             food.category == category &&
-            (category != FoodCategory.lunch ||
+            (!category.usesMealPeriods ||
                 food.mealPeriods.contains(mealPeriod)),
       )
       .toList(growable: false);
@@ -214,9 +253,18 @@ FoodItem pickFood(
   return foods.last;
 }
 
-String formatPrice(int price) => '${price ~/ 1000}.000đ';
+/// Ví dụ 45000 → "45.000đ", 1250000 → "1.250.000đ".
+String formatPrice(int price) {
+  final digits = price.abs().toString();
+  final buffer = StringBuffer(price < 0 ? '-' : '');
+  for (var i = 0; i < digits.length; i++) {
+    if (i > 0 && (digits.length - i) % 3 == 0) buffer.write('.');
+    buffer.write(digits[i]);
+  }
+  return '$bufferđ';
+}
 
-/// Độ hiếm của món tự tạo được suy ra từ giá.
+/// Độ hiếm mặc định suy ra từ giá (giống server).
 FoodRarity rarityForPrice(int price) => switch (price) {
       < 50000 => FoodRarity.common,
       < 80000 => FoodRarity.rare,
@@ -224,22 +272,3 @@ FoodRarity rarityForPrice(int price) => switch (price) {
       < 170000 => FoodRarity.legendary,
       _ => FoodRarity.ancient,
     };
-
-FoodItem createCustomFood({
-  required String id,
-  required String name,
-  required FoodCategory category,
-  required int price,
-  required Set<MealPeriod> mealPeriods,
-}) {
-  return FoodItem(
-    id: id,
-    name: name,
-    category: category,
-    price: price,
-    rarity: rarityForPrice(price),
-    imageIndex: 0,
-    mealPeriods: mealPeriods,
-    isCustom: true,
-  );
-}

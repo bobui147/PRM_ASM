@@ -4,10 +4,12 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import 'models/food_item.dart';
+import 'services/app_services.dart';
 import 'services/food_library.dart';
-import 'services/maps_launcher.dart';
 import 'services/share_launcher.dart';
+import 'widgets/common.dart';
 import 'widgets/food_photo.dart';
+import 'widgets/restaurant_section.dart';
 
 const _pageColor = Color(0xFF15120E);
 const _surfaceColor = Color(0xFF201A12);
@@ -32,9 +34,9 @@ MealPeriod mealPeriodFor(DateTime time) => switch (time.hour) {
     };
 
 class FoodSpinnerPage extends StatefulWidget {
-  const FoodSpinnerPage({super.key, required this.library});
+  const FoodSpinnerPage({super.key, required this.services});
 
-  final FoodLibrary library;
+  final AppServices services;
 
   @override
   State<FoodSpinnerPage> createState() => _FoodSpinnerPageState();
@@ -42,6 +44,7 @@ class FoodSpinnerPage extends StatefulWidget {
 
 class _FoodSpinnerPageState extends State<FoodSpinnerPage>
     with SingleTickerProviderStateMixin {
+  FoodLibrary get _library => widget.services.library;
   final _random = math.Random();
   late final AnimationController _controller;
   late final Animation<double> _progress;
@@ -54,10 +57,10 @@ class _FoodSpinnerPageState extends State<FoodSpinnerPage>
   bool _dialogOpen = false;
   FoodItem? _result;
 
-  FoodCategory get _category => widget.library.category;
-  FoodBudget get _budget => widget.library.budget;
+  FoodCategory? get _category => _library.category;
+  FoodBudget get _budget => _library.budget;
 
-  List<FoodItem> get _eligibleFoods => widget.library.eligibleFoods(_mealPeriod);
+  List<FoodItem> get _eligibleFoods => _library.eligibleFoods(_mealPeriod);
 
   bool get _canSpin =>
       _eligibleFoods.isNotEmpty && !_isSpinning && !_dialogOpen;
@@ -85,7 +88,7 @@ class _FoodSpinnerPageState extends State<FoodSpinnerPage>
     ]).animate(_controller);
     _reel = _buildPreviewReel();
     _scheduleMealPeriodUpdate();
-    widget.library.addListener(_handleLibraryChanged);
+    _library.addListener(_handleLibraryChanged);
   }
 
   /// Kho món, bộ lọc hoặc món ẩn thay đổi (kể cả từ tab khác).
@@ -141,7 +144,7 @@ class _FoodSpinnerPageState extends State<FoodSpinnerPage>
     if (_isSpinning || _dialogOpen) {
       return;
     }
-    if (category == FoodCategory.lunch && category == _category) {
+    if (category.usesMealPeriods && category == _category) {
       setState(() {
         _mealPeriod = _mealPeriod.next;
         _result = null;
@@ -150,14 +153,33 @@ class _FoodSpinnerPageState extends State<FoodSpinnerPage>
       return;
     }
     // FoodLibrary lưu lựa chọn và báo lại qua _handleLibraryChanged.
-    widget.library.setCategory(category);
+    _library.setCategory(category);
+  }
+
+  /// Bữa khác của nhóm đang chọn có món, để gợi ý khi bữa hiện tại trống.
+  List<MealPeriod> _mealsWithFoods() {
+    final category = _category;
+    if (category == null || !category.usesMealPeriods) return const [];
+    return [
+      for (final meal in MealPeriod.values)
+        if (meal != _mealPeriod && _library.eligibleFoods(meal).isNotEmpty) meal,
+    ];
+  }
+
+  void _selectMeal(MealPeriod meal) {
+    if (_isSpinning || _dialogOpen) return;
+    setState(() {
+      _mealPeriod = meal;
+      _result = null;
+      _reel = _buildPreviewReel();
+    });
   }
 
   void _selectBudget(FoodBudget? budget) {
     if (_isSpinning || _dialogOpen || budget == null) {
       return;
     }
-    widget.library.setBudget(budget);
+    _library.setBudget(budget);
   }
 
   void _spin() {
@@ -170,8 +192,8 @@ class _FoodSpinnerPageState extends State<FoodSpinnerPage>
       foods,
       _budget,
       _random,
-      favoriteIds: widget.library.favoriteIds,
-      recentIds: widget.library.recentFoodIds(DateTime.now()),
+      favoriteIds: _library.favoriteIds,
+      recentIds: _library.recentFoodIds(DateTime.now()),
     );
     final winnerIndex = 30 + _random.nextInt(5);
     final reel = List.generate(
@@ -182,6 +204,8 @@ class _FoodSpinnerPageState extends State<FoodSpinnerPage>
 
     _controller.duration = _spinDuration;
     _controller.reset();
+    // Không đổi danh mục giữa chừng khi đang quay (FR-M01).
+    _library.locked = true;
     setState(() {
       _winnerIndex = winnerIndex;
       _reel = reel;
@@ -202,7 +226,7 @@ class _FoodSpinnerPageState extends State<FoodSpinnerPage>
       _isSpinning = false;
       _dialogOpen = true;
     });
-    widget.library.recordSpin(result, DateTime.now());
+    _library.recordSpin(result, DateTime.now());
     WidgetsBinding.instance.addPostFrameCallback((_) => _showResult(result));
   }
 
@@ -214,7 +238,7 @@ class _FoodSpinnerPageState extends State<FoodSpinnerPage>
       context: context,
       barrierDismissible: false,
       barrierColor: Colors.black.withAlpha(200),
-      builder: (context) => _ResultDialog(food: food, library: widget.library),
+      builder: (context) => _ResultDialog(food: food, services: widget.services),
     );
     if (mounted) {
       setState(() {
@@ -226,12 +250,14 @@ class _FoodSpinnerPageState extends State<FoodSpinnerPage>
           _reel = _buildPreviewReel();
         }
       });
+      // Áp dụng danh mục mới tải về trong lúc đang quay/xem kết quả (FR-M01).
+      _library.locked = false;
     }
   }
 
   @override
   void dispose() {
-    widget.library.removeListener(_handleLibraryChanged);
+    _library.removeListener(_handleLibraryChanged);
     _mealPeriodTimer?.cancel();
     _controller
       ..removeStatusListener(_handleAnimationStatus)
@@ -241,6 +267,23 @@ class _FoodSpinnerPageState extends State<FoodSpinnerPage>
 
   @override
   Widget build(BuildContext context) {
+    final status = _library.status;
+    if (status != CatalogStatus.ready) {
+      return Scaffold(
+        backgroundColor: _pageColor,
+        body: SafeArea(
+          child: Center(
+            child: status == CatalogStatus.loading
+                ? const CircularProgressIndicator(key: Key('catalog-loading'))
+                : ErrorRetry(
+                    key: const Key('catalog-error'),
+                    message: 'Cần kết nối mạng để tải danh sách món lần đầu.',
+                    onRetry: _library.refresh,
+                  ),
+          ),
+        ),
+      );
+    }
     final foods = _eligibleFoods;
     return Scaffold(
       backgroundColor: _pageColor,
@@ -251,16 +294,31 @@ class _FoodSpinnerPageState extends State<FoodSpinnerPage>
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               _buildHeader(),
+              if (_library.usingCachedData)
+                Row(children: [
+                  const Expanded(
+                    child: Text('Đang dùng dữ liệu đã lưu',
+                        style: TextStyle(color: _mutedTextColor, fontSize: 12)),
+                  ),
+                  TextButton(onPressed: _library.refresh, child: const Text('Thử lại')),
+                ]),
               const SizedBox(height: 22),
-              _buildCategoryFilters(),
-              const SizedBox(height: 12),
-              _buildBudgetSelector(),
-              const SizedBox(height: 18),
-              foods.isEmpty ? _buildEmptyReel() : _buildSpinner(),
-              const SizedBox(height: 16),
-              _buildSpinButton(),
-              const SizedBox(height: 26),
-              _buildInventory(foods),
+              if (_library.allFoods.isEmpty)
+                const EmptyState(
+                  key: Key('catalog-empty'),
+                  message: 'Chưa có món nào. Vui lòng quay lại sau.',
+                )
+              else ...[
+                _buildCategoryFilters(),
+                const SizedBox(height: 12),
+                _buildBudgetSelector(),
+                const SizedBox(height: 18),
+                foods.isEmpty ? _buildEmptyReel() : _buildSpinner(),
+                const SizedBox(height: 16),
+                _buildSpinButton(),
+                const SizedBox(height: 26),
+                _buildInventory(foods),
+              ],
             ],
           ),
         ),
@@ -297,17 +355,18 @@ class _FoodSpinnerPageState extends State<FoodSpinnerPage>
   }
 
   Widget _buildCategoryFilters() {
+    final categories = _library.categories;
     return SizedBox(
       height: 46,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        itemCount: FoodCategory.values.length,
+        itemCount: categories.length,
         separatorBuilder: (_, __) => const SizedBox(width: 8),
         itemBuilder: (context, index) {
-          final category = FoodCategory.values[index];
+          final category = categories[index];
           final selected = category == _category;
           return ChoiceChip(
-            key: ValueKey('category-${category.name}'),
+            key: ValueKey('category-${category.slug}'),
             selected: selected,
             showCheckmark: false,
             avatar: Icon(
@@ -315,8 +374,9 @@ class _FoodSpinnerPageState extends State<FoodSpinnerPage>
               size: 18,
               color: selected ? _warmTextColor : _mutedTextColor,
             ),
+            // Nhóm dùng bữa ăn hiện tên bữa; bấm lại để đổi bữa.
             label: Text(
-              category == FoodCategory.lunch
+              category.usesMealPeriods && selected
                   ? _mealPeriod.label
                   : category.label,
             ),
@@ -467,35 +527,61 @@ class _FoodSpinnerPageState extends State<FoodSpinnerPage>
   }
 
   Widget _buildEmptyReel() {
+    final otherMeals = _mealsWithFoods();
     return Container(
       key: const Key('empty-reel'),
-      height: 180,
-      padding: const EdgeInsets.all(24),
+      // Chiều cao tối thiểu thay vì cố định để chữ lớn hoặc nhiều nút không bị tràn.
+      constraints: const BoxConstraints(minHeight: 180),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
       decoration: BoxDecoration(
         color: _chromeColor,
         border: Border.all(color: _hairlineColor),
         borderRadius: BorderRadius.circular(4),
       ),
-      child: const Column(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.inventory_2_outlined, size: 40, color: _goldColor),
-          SizedBox(height: 12),
+          const Icon(Icons.inventory_2_outlined, size: 40, color: _goldColor),
+          const SizedBox(height: 12),
           Text(
-            'Không có món phù hợp',
-            style: TextStyle(
+            otherMeals.isEmpty ? 'Không có món phù hợp' : '${_mealPeriod.label} chưa có món',
+            textAlign: TextAlign.center,
+            style: const TextStyle(
               color: _warmTextColor,
               fontFamily: 'serif',
               fontSize: 18,
               fontWeight: FontWeight.w700,
             ),
           ),
-          SizedBox(height: 6),
+          const SizedBox(height: 6),
           Text(
-            'Hãy chọn loại món hoặc mức ngân sách khác.',
+            otherMeals.isEmpty
+                ? 'Hãy chọn nhóm món khác hoặc hiện lại món đã ẩn ở tab Món ăn.'
+                : 'Chọn bữa đang có món:',
             textAlign: TextAlign.center,
-            style: TextStyle(color: _mutedTextColor),
+            style: const TextStyle(color: _mutedTextColor),
           ),
+          if (otherMeals.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final meal in otherMeals)
+                  OutlinedButton(
+                    key: ValueKey('meal-${meal.name}'),
+                    onPressed: () => _selectMeal(meal),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: _warmTextColor,
+                      side: const BorderSide(color: _hairlineColor),
+                    ),
+                    child: Text(meal.label),
+                  ),
+              ],
+            ),
+          ],
         ],
       ),
     );
@@ -586,7 +672,7 @@ class _FoodSpinnerPageState extends State<FoodSpinnerPage>
             ),
             itemBuilder: (context, index) => _InventoryCard(
               food: foods[index],
-              favorite: widget.library.isFavorite(foods[index].id),
+              favorite: _library.isFavorite(foods[index].id),
             ),
           ),
       ],
@@ -802,26 +888,17 @@ class _InventoryCard extends StatelessWidget {
 }
 
 class _ResultDialog extends StatelessWidget {
-  const _ResultDialog({required this.food, required this.library});
+  const _ResultDialog({required this.food, required this.services});
 
   final FoodItem food;
-  final FoodLibrary library;
+  final AppServices services;
+
+  FoodLibrary get library => services.library;
 
   Future<void> _share(BuildContext context) async {
     final shared = await shareText(shareMessage(food));
     if (!shared && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Không thể mở bảng chia sẻ.')),
-      );
-    }
-  }
-
-  Future<void> _openMaps(BuildContext context) async {
-    final opened = await openGoogleMaps(food.name);
-    if (!opened && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Không thể mở Google Maps.')),
-      );
+      showSnack(context, 'Không thể mở bảng chia sẻ.');
     }
   }
 
@@ -885,7 +962,7 @@ class _ResultDialog extends StatelessWidget {
                     border: Border.all(color: _hairlineColor),
                   ),
                   clipBehavior: Clip.antiAlias,
-                  child: FoodPhoto(food: food),
+                  child: FoodPhoto(food: food, large: true),
                 ),
                 const SizedBox(height: 20),
                 Text(
@@ -956,26 +1033,7 @@ class _ResultDialog extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 10),
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: FilledButton.icon(
-                    key: const Key('google-maps-button'),
-                    onPressed: () => _openMaps(context),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: const Color(0xFF354F5C),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    ),
-                    icon: const Icon(Icons.map_outlined),
-                    label: const Text(
-                      'TÌM TRÊN GOOGLE MAPS',
-                      style: TextStyle(fontWeight: FontWeight.w800),
-                    ),
-                  ),
-                ),
+                RestaurantSection(food: food, services: services),
                 const SizedBox(height: 10),
                 SizedBox(
                   width: double.infinity,

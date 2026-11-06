@@ -1,0 +1,580 @@
+{
+  "source": "lib/data/sample_foods.dart",
+  "note": "Ảnh là tài nguyên AI tạo bằng ImageGen, mang tính minh họa; giá là giá tham khảo.",
+  "atlasGrid": {
+    "columns": 3,
+    "rows": 2
+  },
+  "foods": [
+    {
+      "legacyId": "com-tam",
+      "name": "Cơm tấm",
+      "categorySlug": "mon-chinh",
+      "referencePrice": 45000,
+      "rarity": "common",
+      "mealPeriods": ["breakfast", "lunch", "dinner"],
+      "atlas": "foods-lunch.png",
+      "cell": 0
+    },
+    {
+      "legacyId": "pho-bo",
+      "name": "Phở bò",
+      "categorySlug": "mon-chinh",
+      "referencePrice": 50000,
+      "rarity": "rare",
+      "mealPeriods": ["late_night", "breakfast", "lunch", "dinner"],
+      "atlas": "foods-lunch.png",
+      "cell": 1
+    },
+    {
+      "legacyId": "banh-mi",
+      "name": "Bánh mì thịt",
+      "categorySlug": "mon-chinh",
+      "referencePrice": 35000,
+      "rarity": "common",
+      "mealPeriods": ["late_night", "breakfast", "lunch", "dinner"],
+      "atlas": "foods-lunch.png",
+      "cell": 2
+    },
+    {
+      "legacyId": "bun-cha",
+      "name": "Bún chả Hà Nội",
+      "categorySlug": "mon-chinh",
+      "referencePrice": 55000,
+      "rarity": "rare",
+      "mealPeriods": ["lunch", "dinner"],
+      "atlas": "foods-lunch.png",
+      "cell": 3
+    },
+    {
+      "legacyId": "bun-bo-hue",
+      "name": "Bún bò Huế",
+      "categorySlug": "mon-chinh",
+      "referencePrice": 65000,
+      "rarity": "epic",
+      "mealPeriods": ["late_night", "breakfast", "lunch", "dinner"],
+      "atlas": "foods-lunch.png",
+      "cell": 4
+    },
+    {
+      "legacyId": "sushi",
+      "name": "Sushi cá hồi",
+      "categorySlug": "mon-chinh",
+      "referencePrice": 120000,
+      "rarity": "legendary",
+      "mealPeriods": ["lunch", "dinner"],
+      "atlas": "foods-lunch.png",
+      "cell": 5
+    },
+    {
+      "legacyId": "mi-quang",
+      "name": "Mì Quảng",
+      "categorySlug": "mon-chinh",
+      "referencePrice": 55000,
+      "rarity": "rare",
+      "mealPeriods": ["breakfast", "lunch", "dinner"],
+      "atlas": "foods-lunch-2.png",
+      "cell": 0
+    },
+    {
+      "legacyId": "cao-lau",
+      "name": "Cao lầu",
+      "categorySlug": "mon-chinh",
+      "referencePrice": 60000,
+      "rarity": "epic",
+      "mealPeriods": ["lunch", "dinner"],
+      "atlas": "foods-lunch-2.png",
+      "cell": 1
+    },
+    {
+      "legacyId": "hu-tieu-nam-vang",
+      "name": "Hủ tiếu Nam Vang",
+      "categorySlug": "mon-chinh",
+      "referencePrice": 60000,
+      "rarity": "rare",
+      "mealPeriods": ["late_night", "breakfast", "lunch", "dinner"],
+      "atlas": "foods-lunch-2.png",
+      "cell": 2
+    },
+    {
+      "legacyId": "com-ga-hoi-an",
+      "name": "Cơm gà Hội An",
+      "categorySlug": "mon-chinh",
+      "referencePrice": 55000,
+      "rarity": "rare",
+      "mealPeriods": ["lunch", "dinner"],
+      "atlas": "foods-lunch-2.png",
+      "cell": 3
+    },
+    {
+      "legacyId": "bun-rieu-cua",
+      "name": "Bún riêu cua",
+      "categorySlug": "mon-chinh",
+      "referencePrice": 50000,
+      "rarity": "common",
+      "mealPeriods": ["breakfast", "lunch", "dinner"],
+      "atlas": "foods-lunch-2.png",
+      "cell": 4
+    },
+    {
+      "legacyId": "banh-canh-cua",
+      "name": "Bánh canh cua",
+      "categorySlug": "mon-chinh",
+      "referencePrice": 70000,
+      "rarity": "epic",
+      "mealPeriods": ["breakfast", "lunch", "dinner"],
+      "atlas": "foods-lunch-2.png",
+      "cell": 5
+    },
+    {
+      "legacyId": "bun-thang",
+      "name": "Bún thang Hà Nội",
+      "categorySlug": "mon-chinh",
+      "referencePrice": 60000,
+      "rarity": "epic",
+      "mealPeriods": ["breakfast", "lunch"],
+      "atlas": "foods-lunch-3.png",
+      "cell": 0
+    },
+    {
+      "legacyId": "cha-ca-la-vong",
+      "name": "Chả cá Lã Vọng",
+      "categorySlug": "mon-chinh",
+      "referencePrice": 120000,
+      "rarity": "legendary",
+      "mealPeriods": ["lunch", "dinner"],
+      "atlas": "foods-lunch-3.png",
+      "cell": 1
+    },
+    {
+      "legacyId": "pho-ga-ha-noi",
+      "name": "Phở gà Hà Nội",
+      "categorySlug": "mon-chinh",
+      "referencePrice": 55000,
+      "rarity": "rare",
+      "mealPeriods": ["late_night", "breakfast", "lunch", "dinner"],
+      "atlas": "foods-lunch-3.png",
+      "cell": 2
+    },
+    {
+      "legacyId": "banh-cuon-thanh-tri",
+      "name": "Bánh cuốn Thanh Trì",
+      "categorySlug": "mon-chinh",
+      "referencePrice": 45000,
+      "rarity": "rare",
+      "mealPeriods": ["breakfast", "lunch"],
+      "atlas": "foods-lunch-3.png",
+      "cell": 3
+    },
+    {
+      "legacyId": "bun-dau-mam-tom",
+      "name": "Bún đậu mắm tôm",
+      "categorySlug": "mon-chinh",
+      "referencePrice": 65000,
+      "rarity": "epic",
+      "mealPeriods": ["lunch", "dinner"],
+      "atlas": "foods-lunch-3.png",
+      "cell": 4
+    },
+    {
+      "legacyId": "mien-luon",
+      "name": "Miến lươn",
+      "categorySlug": "mon-chinh",
+      "referencePrice": 60000,
+      "rarity": "rare",
+      "mealPeriods": ["breakfast", "lunch", "dinner"],
+      "atlas": "foods-lunch-3.png",
+      "cell": 5
+    },
+    {
+      "legacyId": "xoi-xeo",
+      "name": "Xôi xéo Hà Nội",
+      "categorySlug": "mon-chinh",
+      "referencePrice": 30000,
+      "rarity": "common",
+      "mealPeriods": ["late_night", "breakfast", "lunch"],
+      "atlas": "foods-lunch-4.png",
+      "cell": 0
+    },
+    {
+      "legacyId": "com-rang-dua-bo",
+      "name": "Cơm rang dưa bò",
+      "categorySlug": "mon-chinh",
+      "referencePrice": 55000,
+      "rarity": "rare",
+      "mealPeriods": ["lunch", "dinner"],
+      "atlas": "foods-lunch-4.png",
+      "cell": 1
+    },
+    {
+      "legacyId": "bun-moc",
+      "name": "Bún mọc",
+      "categorySlug": "mon-chinh",
+      "referencePrice": 50000,
+      "rarity": "common",
+      "mealPeriods": ["breakfast", "lunch", "dinner"],
+      "atlas": "foods-lunch-4.png",
+      "cell": 2
+    },
+    {
+      "legacyId": "canh-ca-ro-dong",
+      "name": "Canh cá rô đồng",
+      "categorySlug": "mon-chinh",
+      "referencePrice": 55000,
+      "rarity": "rare",
+      "mealPeriods": ["lunch", "dinner"],
+      "atlas": "foods-lunch-4.png",
+      "cell": 3
+    },
+    {
+      "legacyId": "banh-da-cua",
+      "name": "Bánh đa cua Hải Phòng",
+      "categorySlug": "mon-chinh",
+      "referencePrice": 60000,
+      "rarity": "epic",
+      "mealPeriods": ["breakfast", "lunch", "dinner"],
+      "atlas": "foods-lunch-4.png",
+      "cell": 4
+    },
+    {
+      "legacyId": "nem-cua-be",
+      "name": "Nem cua bể Hải Phòng",
+      "categorySlug": "mon-chinh",
+      "referencePrice": 70000,
+      "rarity": "legendary",
+      "mealPeriods": ["lunch", "dinner"],
+      "atlas": "foods-lunch-4.png",
+      "cell": 5
+    },
+    {
+      "legacyId": "ca-phe-sua",
+      "name": "Cà phê sữa",
+      "categorySlug": "do-uong",
+      "referencePrice": 30000,
+      "rarity": "common",
+      "mealPeriods": [],
+      "atlas": "foods-drinks.png",
+      "cell": 0
+    },
+    {
+      "legacyId": "tra-dao",
+      "name": "Trà đào",
+      "categorySlug": "do-uong",
+      "referencePrice": 35000,
+      "rarity": "common",
+      "mealPeriods": [],
+      "atlas": "foods-drinks.png",
+      "cell": 1
+    },
+    {
+      "legacyId": "nuoc-ep-cam",
+      "name": "Nước ép cam",
+      "categorySlug": "do-uong",
+      "referencePrice": 45000,
+      "rarity": "rare",
+      "mealPeriods": [],
+      "atlas": "foods-drinks.png",
+      "cell": 2
+    },
+    {
+      "legacyId": "matcha-latte",
+      "name": "Matcha latte",
+      "categorySlug": "do-uong",
+      "referencePrice": 55000,
+      "rarity": "rare",
+      "mealPeriods": [],
+      "atlas": "foods-drinks.png",
+      "cell": 3
+    },
+    {
+      "legacyId": "tra-sua",
+      "name": "Trà sữa trân châu",
+      "categorySlug": "do-uong",
+      "referencePrice": 60000,
+      "rarity": "epic",
+      "mealPeriods": [],
+      "atlas": "foods-drinks.png",
+      "cell": 4
+    },
+    {
+      "legacyId": "nuoc-mia",
+      "name": "Nước mía",
+      "categorySlug": "do-uong",
+      "referencePrice": 20000,
+      "rarity": "common",
+      "mealPeriods": [],
+      "atlas": "foods-drinks-2.png",
+      "cell": 0
+    },
+    {
+      "legacyId": "sinh-to-bo",
+      "name": "Sinh tố bơ",
+      "categorySlug": "do-uong",
+      "referencePrice": 45000,
+      "rarity": "rare",
+      "mealPeriods": [],
+      "atlas": "foods-drinks-2.png",
+      "cell": 1
+    },
+    {
+      "legacyId": "tra-chanh",
+      "name": "Trà chanh",
+      "categorySlug": "do-uong",
+      "referencePrice": 25000,
+      "rarity": "common",
+      "mealPeriods": [],
+      "atlas": "foods-drinks-2.png",
+      "cell": 2
+    },
+    {
+      "legacyId": "sua-chua-danh-da",
+      "name": "Sữa chua đánh đá",
+      "categorySlug": "do-uong",
+      "referencePrice": 35000,
+      "rarity": "rare",
+      "mealPeriods": [],
+      "atlas": "foods-drinks-2.png",
+      "cell": 3
+    },
+    {
+      "legacyId": "dua-tuoi",
+      "name": "Dừa tươi",
+      "categorySlug": "do-uong",
+      "referencePrice": 35000,
+      "rarity": "common",
+      "mealPeriods": [],
+      "atlas": "foods-drinks-2.png",
+      "cell": 4
+    },
+    {
+      "legacyId": "cacao-nong",
+      "name": "Ca cao nóng",
+      "categorySlug": "do-uong",
+      "referencePrice": 40000,
+      "rarity": "rare",
+      "mealPeriods": [],
+      "atlas": "foods-drinks-2.png",
+      "cell": 5
+    },
+    {
+      "legacyId": "banh-trang-tron",
+      "name": "Bánh tráng trộn",
+      "categorySlug": "an-vat",
+      "referencePrice": 30000,
+      "rarity": "common",
+      "mealPeriods": [],
+      "atlas": "foods-snacks.png",
+      "cell": 0
+    },
+    {
+      "legacyId": "ca-vien-chien",
+      "name": "Cá viên chiên",
+      "categorySlug": "an-vat",
+      "referencePrice": 40000,
+      "rarity": "common",
+      "mealPeriods": [],
+      "atlas": "foods-snacks.png",
+      "cell": 1
+    },
+    {
+      "legacyId": "khoai-tay-chien",
+      "name": "Khoai tây chiên",
+      "categorySlug": "an-vat",
+      "referencePrice": 45000,
+      "rarity": "rare",
+      "mealPeriods": [],
+      "atlas": "foods-snacks.png",
+      "cell": 2
+    },
+    {
+      "legacyId": "goi-cuon",
+      "name": "Gỏi cuốn",
+      "categorySlug": "an-vat",
+      "referencePrice": 45000,
+      "rarity": "rare",
+      "mealPeriods": [],
+      "atlas": "foods-snacks.png",
+      "cell": 3
+    },
+    {
+      "legacyId": "banh-xeo",
+      "name": "Bánh xèo",
+      "categorySlug": "an-vat",
+      "referencePrice": 60000,
+      "rarity": "epic",
+      "mealPeriods": [],
+      "atlas": "foods-snacks.png",
+      "cell": 4
+    },
+    {
+      "legacyId": "banh-trang-nuong",
+      "name": "Bánh tráng nướng",
+      "categorySlug": "an-vat",
+      "referencePrice": 30000,
+      "rarity": "common",
+      "mealPeriods": [],
+      "atlas": "foods-snacks-2.png",
+      "cell": 0
+    },
+    {
+      "legacyId": "nem-chua-ran",
+      "name": "Nem chua rán",
+      "categorySlug": "an-vat",
+      "referencePrice": 45000,
+      "rarity": "rare",
+      "mealPeriods": [],
+      "atlas": "foods-snacks-2.png",
+      "cell": 1
+    },
+    {
+      "legacyId": "che-khuc-bach",
+      "name": "Chè khúc bạch",
+      "categorySlug": "an-vat",
+      "referencePrice": 40000,
+      "rarity": "rare",
+      "mealPeriods": [],
+      "atlas": "foods-snacks-2.png",
+      "cell": 2
+    },
+    {
+      "legacyId": "xoi-xoai",
+      "name": "Xôi xoài",
+      "categorySlug": "an-vat",
+      "referencePrice": 45000,
+      "rarity": "epic",
+      "mealPeriods": [],
+      "atlas": "foods-snacks-2.png",
+      "cell": 3
+    },
+    {
+      "legacyId": "banh-flan",
+      "name": "Bánh flan",
+      "categorySlug": "an-vat",
+      "referencePrice": 30000,
+      "rarity": "common",
+      "mealPeriods": [],
+      "atlas": "foods-snacks-2.png",
+      "cell": 4
+    },
+    {
+      "legacyId": "bap-xao",
+      "name": "Bắp xào",
+      "categorySlug": "an-vat",
+      "referencePrice": 30000,
+      "rarity": "common",
+      "mealPeriods": [],
+      "atlas": "foods-snacks-2.png",
+      "cell": 5
+    },
+    {
+      "legacyId": "bo-la-lot",
+      "name": "Bò lá lốt",
+      "categorySlug": "do-nhau",
+      "referencePrice": 100000,
+      "rarity": "rare",
+      "mealPeriods": [],
+      "atlas": "foods-drinking.png",
+      "cell": 0
+    },
+    {
+      "legacyId": "muc-nuong",
+      "name": "Mực nướng",
+      "categorySlug": "do-nhau",
+      "referencePrice": 120000,
+      "rarity": "epic",
+      "mealPeriods": [],
+      "atlas": "foods-drinking.png",
+      "cell": 1
+    },
+    {
+      "legacyId": "suon-nuong",
+      "name": "Sườn nướng BBQ",
+      "categorySlug": "do-nhau",
+      "referencePrice": 140000,
+      "rarity": "legendary",
+      "mealPeriods": [],
+      "atlas": "foods-drinking.png",
+      "cell": 2
+    },
+    {
+      "legacyId": "ga-nuong",
+      "name": "Gà nướng nguyên con",
+      "categorySlug": "do-nhau",
+      "referencePrice": 150000,
+      "rarity": "legendary",
+      "mealPeriods": [],
+      "atlas": "foods-drinking.png",
+      "cell": 3
+    },
+    {
+      "legacyId": "lau-thai",
+      "name": "Lẩu Thái hải sản",
+      "categorySlug": "do-nhau",
+      "referencePrice": 180000,
+      "rarity": "ancient",
+      "mealPeriods": [],
+      "atlas": "foods-drinking.png",
+      "cell": 4
+    },
+    {
+      "legacyId": "ngheu-hap-sa",
+      "name": "Nghêu hấp sả",
+      "categorySlug": "do-nhau",
+      "referencePrice": 90000,
+      "rarity": "rare",
+      "mealPeriods": [],
+      "atlas": "foods-drinking-2.png",
+      "cell": 0
+    },
+    {
+      "legacyId": "oc-huong-rang-muoi",
+      "name": "Ốc hương rang muối",
+      "categorySlug": "do-nhau",
+      "referencePrice": 140000,
+      "rarity": "epic",
+      "mealPeriods": [],
+      "atlas": "foods-drinking-2.png",
+      "cell": 1
+    },
+    {
+      "legacyId": "tom-nuong",
+      "name": "Tôm nướng",
+      "categorySlug": "do-nhau",
+      "referencePrice": 150000,
+      "rarity": "legendary",
+      "mealPeriods": [],
+      "atlas": "foods-drinking-2.png",
+      "cell": 2
+    },
+    {
+      "legacyId": "chan-ga-nuong",
+      "name": "Chân gà nướng",
+      "categorySlug": "do-nhau",
+      "referencePrice": 90000,
+      "rarity": "rare",
+      "mealPeriods": [],
+      "atlas": "foods-drinking-2.png",
+      "cell": 3
+    },
+    {
+      "legacyId": "lau-bo",
+      "name": "Lẩu bò",
+      "categorySlug": "do-nhau",
+      "referencePrice": 180000,
+      "rarity": "ancient",
+      "mealPeriods": [],
+      "atlas": "foods-drinking-2.png",
+      "cell": 4
+    },
+    {
+      "legacyId": "ca-nuong-giay-bac",
+      "name": "Cá nướng giấy bạc",
+      "categorySlug": "do-nhau",
+      "referencePrice": 160000,
+      "rarity": "legendary",
+      "mealPeriods": [],
+      "atlas": "foods-drinking-2.png",
+      "cell": 5
+    }
+  ]
+}

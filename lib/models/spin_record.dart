@@ -1,12 +1,15 @@
+import 'package:flutter/widgets.dart';
+
 import 'food_item.dart';
 
-/// Một lượt quay đã có kết quả. Lưu cả tên và giá để vẫn hiển thị được
-/// khi món tự tạo đã bị xóa.
+/// Một lượt quay đã có kết quả. Lưu tên món, tên/icon nhóm và giá tại thời
+/// điểm quay để vẫn hiển thị được khi admin sửa hoặc xóa món.
 class SpinRecord {
   const SpinRecord({
     required this.foodId,
     required this.foodName,
-    required this.category,
+    required this.categoryName,
+    required this.categoryIcon,
     required this.price,
     required this.time,
   });
@@ -14,21 +17,27 @@ class SpinRecord {
   factory SpinRecord.fromFood(FoodItem food, DateTime time) => SpinRecord(
         foodId: food.id,
         foodName: food.name,
-        category: food.category,
+        categoryName: food.category.name,
+        categoryIcon: food.category.iconKey,
         price: food.price,
         time: time,
       );
 
   final String foodId;
   final String foodName;
-  final FoodCategory category;
+  final String categoryName;
+  final String categoryIcon;
   final int price;
   final DateTime time;
+
+  /// Icon nhóm món; mã lạ hoặc rỗng dùng icon mặc định.
+  IconData get icon => iconForCategory(categoryIcon);
 
   Map<String, Object?> toJson() => {
         'foodId': foodId,
         'foodName': foodName,
-        'category': category.name,
+        'categoryName': categoryName,
+        'categoryIcon': categoryIcon,
         'price': price,
         'time': time.millisecondsSinceEpoch,
       };
@@ -41,8 +50,9 @@ class SpinRecord {
       return SpinRecord(
         foodId: json['foodId'] as String,
         foodName: json['foodName'] as String,
-        category: FoodCategory.values.byName(json['category'] as String),
-        price: json['price'] as int,
+        categoryName: json['categoryName'] as String? ?? '',
+        categoryIcon: json['categoryIcon'] as String? ?? 'restaurant',
+        price: (json['price'] as num).toInt(),
         time: DateTime.fromMillisecondsSinceEpoch(json['time'] as int),
       );
     } catch (_) {

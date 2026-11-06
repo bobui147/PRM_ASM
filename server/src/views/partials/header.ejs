@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title><%= typeof title !== 'undefined' ? title + ' · ' : '' %><%= appName %></title>
+    <link rel="stylesheet" href="/static/vendor/bootstrap/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="/static/css/admin.css" />
+  </head>
+  <body class="bg-body-tertiary">
+    <a class="visually-hidden-focusable position-absolute top-0 start-0 m-2 btn btn-light" href="#main">Bỏ qua tới nội dung chính</a>
+    <header class="navbar navbar-dark bg-dark px-3">
+      <a class="navbar-brand fw-semibold" href="/admin"><%= appName %> · Admin</a>
+      <% if (typeof admin !== 'undefined' && admin) { %>
+        <div class="d-flex align-items-center gap-2">
+          <a class="text-light small text-decoration-none" href="/admin/account/password"><%= admin.username %></a>
+          <form method="post" action="/admin/logout" class="m-0">
+            <input type="hidden" name="_csrf" value="<%= csrf() %>" />
+            <button class="btn btn-sm btn-outline-light" type="submit">Đăng xuất</button>
+          </form>
+        </div>
+      <% } %>
+    </header>
+    <% if (typeof admin !== 'undefined' && admin) { %>
+      <%
+        const menu = [
+          ['/admin', 'Dashboard'], ['/admin/categories', 'Nhóm món'], ['/admin/foods', 'Món ăn'],
+          ['/admin/restaurants', 'Quán ăn'], ['/admin/reviews/pending', 'Duyệt review'], ['/admin/reviews', 'Tất cả review'],
+          ['/admin/reports', 'Báo cáo'], ['/admin/users', 'Người dùng'], ['/admin/audit-logs', 'Nhật ký'],
+        ];
+        const isActive = (href) => href === '/admin' ? currentPath === '/admin' || currentPath === '/admin/'
+          : href === '/admin/reviews' ? currentPath === '/admin/reviews' : currentPath.startsWith(href);
+      %>
+      <nav class="bg-white border-bottom px-3" aria-label="Menu quản trị">
+        <ul class="nav nav-underline flex-nowrap overflow-auto">
+          <% for (const [href, label] of menu) { %>
+            <li class="nav-item"><a class="nav-link text-nowrap<%= isActive(href) ? ' active' : '' %>" href="<%= href %>"<%= isActive(href) ? ' aria-current=page' : '' %>><%= label %></a></li>
+          <% } %>
+        </ul>
+      </nav>
+    <% } %>

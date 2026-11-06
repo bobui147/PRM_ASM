@@ -1,0 +1,11 @@
+<%# Flash message dùng chung. Truyền mảng flash = [{ type: 'success'|'danger'|'warning'|'info', message }]. %>
+<% if (typeof flash !== 'undefined' && Array.isArray(flash) && flash.length > 0) { %>
+  <div class="mb-3">
+    <% for (const item of flash) { %>
+      <div class="alert alert-<%= ['success', 'danger', 'warning', 'info'].includes(item.type) ? item.type : 'info' %> alert-dismissible fade show" role="<%= item.type === 'danger' ? 'alert' : 'status' %>">
+        <%= item.message %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Đóng"></button>
+      </div>
+    <% } %>
+  </div>
+<% } %>

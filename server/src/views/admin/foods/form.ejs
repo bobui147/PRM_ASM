@@ -1,0 +1,107 @@
+<%- include('../../partials/header') %>
+<% const v = values || {}; const meals = asArray(v.mealPeriods); const picked = asArray(v.restaurantIds); %>
+<main id="main" class="container py-4">
+  <a class="small" href="/admin/foods">&larr; Món ăn</a>
+  <h1 class="h4 my-3"><%= title %></h1>
+  <%- include('../../partials/flash') %>
+  <div class="row g-4">
+    <div class="col-lg-7">
+      <form method="post" action="<%= action %>" enctype="multipart/form-data" class="bg-white border rounded p-4" novalidate>
+        <input type="hidden" name="_csrf" value="<%= csrf() %>" />
+        <%- include('../../partials/field', { name: 'name', label: 'Tên món', value: v.name, required: true }) %>
+        <div class="mb-3">
+          <label class="form-label" for="f-categoryId">Nhóm món <span class="text-danger" aria-hidden="true">*</span></label>
+          <select class="form-select<%= fields.categoryId ? ' is-invalid' : '' %>" id="f-categoryId" name="categoryId">
+            <option value="">Chọn nhóm</option>
+            <% for (const c of categories) { %>
+              <option value="<%= c.id %>"<%= String(v.categoryId) === String(c.id) ? ' selected' : '' %>><%= c.name %><%= c.uses_meal_periods ? ' (chọn bữa ăn)' : '' %></option>
+            <% } %>
+          </select>
+          <% if (fields.categoryId) { %><div class="invalid-feedback"><%= fields.categoryId %></div><% } %>
+        </div>
+        <fieldset class="mb-3">
+          <legend class="form-label fs-6">Bữa ăn <span class="form-text">(chỉ áp dụng cho nhóm có dùng bữa ăn)</span></legend>
+          <% for (const meal of ['breakfast', 'lunch', 'dinner', 'late_night']) { %>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="checkbox" id="meal-<%= meal %>" name="mealPeriods" value="<%= meal %>"<%= meals.includes(meal) ? ' checked' : '' %> />
+              <label class="form-check-label" for="meal-<%= meal %>"><%= labels.MEAL_LABELS[meal] %></label>
+            </div>
+          <% } %>
+          <% if (fields.mealPeriods) { %><div class="text-danger small mt-1" role="alert"><%= fields.mealPeriods %></div><% } %>
+        </fieldset>
+        <%- include('../../partials/field', { name: 'referencePrice', label: 'Giá tham khảo (đồng)', value: v.referencePrice, type: 'number', required: true, attrs: 'min="1000" max="10000000" step="1000"' }) %>
+        <div class="mb-3">
+          <label class="form-label" for="f-rarity">Độ hiếm</label>
+          <select class="form-select" id="f-rarity" name="rarity">
+            <option value="">Tự suy ra từ giá</option>
+            <% for (const r of rarities) { %><option value="<%= r %>"<%= v.rarity === r ? ' selected' : '' %>><%= labels.RARITY_LABELS[r] %></option><% } %>
+          </select>
+        </div>
+        <%- include('../../partials/field', { name: 'description', label: 'Mô tả ngắn', value: v.description, type: 'textarea', help: 'Tối đa 300 ký tự' }) %>
+        <div class="mb-3">
+          <label class="form-label" for="f-image">Ảnh món</label>
+          <input class="form-control<%= fields.image ? ' is-invalid' : '' %>" type="file" id="f-image" name="image" accept="image/jpeg,image/png,image/webp" />
+          <% if (fields.image) { %><div class="invalid-feedback"><%= fields.image %></div><% } %>
+          <div class="form-text">JPEG, PNG hoặc WebP, tối đa 5 MB. Chọn ảnh mới để thay ảnh cũ.</div>
+        </div>
+        <fieldset class="mb-3">
+          <legend class="form-label fs-6">Quán bán món này</legend>
+          <% if (allRestaurants.length === 0) { %>
+            <p class="text-secondary small mb-0">Chưa có quán nào. <a href="/admin/restaurants/new">Thêm quán</a> trước rồi quay lại gắn món.</p>
+          <% } else { %>
+            <input class="form-control form-control-sm mb-2" type="search" placeholder="Lọc theo tên quán" aria-label="Lọc danh sách quán" data-filter-list="#restaurant-picker" />
+            <div id="restaurant-picker" class="border rounded p-2 picker-list<%= fields.restaurants ? ' border-danger' : '' %>">
+              <% for (const r of allRestaurants) { %>
+                <div class="row g-2 align-items-center mb-1" data-filter-item="<%= r.name.toLowerCase() %>">
+                  <div class="col-7">
+                    <div class="form-check">
+                      <input class="form-check-input" type="checkbox" id="rest-<%= r.id %>" name="restaurantIds" value="<%= r.id %>"<%= picked.includes(String(r.id)) ? ' checked' : '' %> />
+                      <label class="form-check-label" for="rest-<%= r.id %>"><%= r.name %> <span class="small text-secondary"><%= labels.AREA_LABELS[r.area] %><%= r.status === 'hidden' ? ' · đang ẩn' : '' %></span></label>
+                    </div>
+                  </div>
+                  <div class="col-5">
+                    <input class="form-control form-control-sm" type="number" min="1000" max="10000000" step="1000" name="price_<%= r.id %>" value="<%= v['price_' + r.id] == null ? '' : v['price_' + r.id] %>" placeholder="Giá tại quán" aria-label="Giá tại <%= r.name %>" />
+                  </div>
+                </div>
+              <% } %>
+            </div>
+            <% if (fields.restaurants) { %><div class="text-danger small mt-1" role="alert"><%= fields.restaurants %></div><% } %>
+            <div class="form-text">Tích quán có bán món. Để trống giá thì dùng giá tham khảo. Bỏ tích để gỡ món khỏi quán.</div>
+          <% } %>
+        </fieldset>
+        <div class="mb-4">
+          <label class="form-label" for="f-status">Trạng thái</label>
+          <select class="form-select" id="f-status" name="status">
+            <option value="active"<%= v.status !== 'hidden' ? ' selected' : '' %>>Hiển thị</option>
+            <option value="hidden"<%= v.status === 'hidden' ? ' selected' : '' %>>Ẩn</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" type="submit">Lưu</button>
+      </form>
+    </div>
+    <% if (typeof food !== 'undefined' && food) { %>
+      <div class="col-lg-5">
+        <div class="bg-white border rounded p-4 mb-3">
+          <h2 class="h6">Ảnh hiện tại</h2>
+          <% if (food.image_path) { %>
+            <img class="thumb-lg d-block mb-2" src="<%= uploadUrl(food.image_path) %>" alt="Ảnh món <%= food.name %>" />
+            <form method="post" action="/admin/foods/<%= food.id %>/image/delete" data-confirm="Xóa ảnh món này?">
+              <input type="hidden" name="_csrf" value="<%= csrf() %>" />
+              <button class="btn btn-sm btn-outline-danger" type="submit">Xóa ảnh</button>
+            </form>
+          <% } else { %><p class="text-secondary mb-0">Chưa có ảnh.</p><% } %>
+        </div>
+        <div class="bg-white border rounded p-4">
+          <h2 class="h6">Quán đang bán (<%= restaurants.length %>)</h2>
+          <% if (restaurants.length === 0) { %><p class="text-secondary mb-0">Chưa có quán nào.</p><% } %>
+          <ul class="list-unstyled mb-0">
+            <% for (const r of restaurants) { %>
+              <li><a href="/admin/restaurants/<%= r.id %>/edit"><%= r.name %></a> · <%= fmtMoney(r.price ?? food.reference_price) %><%= r.status === 'hidden' ? ' (đang ẩn)' : '' %></li>
+            <% } %>
+          </ul>
+        </div>
+      </div>
+    <% } %>
+  </div>
+</main>
+<%- include('../../partials/footer') %>

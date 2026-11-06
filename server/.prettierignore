@@ -1,0 +1,7 @@
+node_modules/
+coverage/
+uploads/
+tmp/
+package-lock.json
+# Prettier chưa hỗ trợ EJS; định dạng view bằng tay.
+*.ejs

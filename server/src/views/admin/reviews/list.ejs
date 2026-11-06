@@ -1,0 +1,52 @@
+<%- include('../../partials/header') %>
+<main id="main" class="container-fluid py-4">
+  <h1 class="h4 mb-3"><%= title %></h1>
+  <%- include('../../partials/flash') %>
+  <% if (!pending) { %>
+    <form method="get" class="row g-2 mb-3 bg-white border rounded p-3">
+      <div class="col-md-3"><label class="form-label small" for="q-status">Trạng thái</label>
+        <select class="form-select form-select-sm" id="q-status" name="status">
+          <option value="">Tất cả</option>
+          <% for (const s of ['pending', 'published', 'rejected', 'hidden']) { %><option value="<%= s %>"<%= query.status === s ? ' selected' : '' %>><%= labels.REVIEW_STATUS_LABELS[s] %></option><% } %>
+        </select></div>
+      <div class="col-md-4"><label class="form-label small" for="q-restaurant">Quán</label>
+        <select class="form-select form-select-sm" id="q-restaurant" name="restaurant">
+          <option value="">Tất cả</option>
+          <% for (const r of restaurants) { %><option value="<%= r.id %>"<%= query.restaurantId === r.id ? ' selected' : '' %>><%= r.name %></option><% } %>
+        </select></div>
+      <div class="col-md-2"><label class="form-label small" for="q-rating">Số sao</label>
+        <select class="form-select form-select-sm" id="q-rating" name="rating">
+          <option value="">Tất cả</option>
+          <% for (const n of [5, 4, 3, 2, 1]) { %><option value="<%= n %>"<%= query.rating === n ? ' selected' : '' %>><%= n %>★</option><% } %>
+        </select></div>
+      <% if (query.userId) { %><input type="hidden" name="user" value="<%= query.userId %>" /><% } %>
+      <div class="col-md-3 d-flex align-items-end gap-2"><button class="btn btn-sm btn-primary" type="submit">Lọc</button><a class="btn btn-sm btn-outline-secondary" href="/admin/reviews">Bỏ lọc</a></div>
+    </form>
+  <% } %>
+
+  <% if (pending && items.length > 0) { %>
+    <form method="post" action="/admin/reviews/bulk" id="bulk-form" class="d-flex flex-wrap gap-2 align-items-end bg-white border rounded p-3 mb-3">
+      <input type="hidden" name="_csrf" value="<%= csrf() %>" />
+      <input type="hidden" name="back" value="<%= back %>" />
+      <div class="form-check me-2"><input class="form-check-input" type="checkbox" id="check-all" data-check-all=".bulk-id" /><label class="form-check-label" for="check-all">Chọn tất cả</label></div>
+      <button class="btn btn-sm btn-success" type="submit" name="action" value="approve">Duyệt mục đã chọn</button>
+      <label class="visually-hidden" for="bulk-reason">Lý do từ chối</label>
+      <select class="form-select form-select-sm w-auto" id="bulk-reason" name="reason">
+        <option value="">Lý do từ chối...</option>
+        <% for (const r of reasons) { %><option value="<%= r %>"><%= labels.REJECT_REASON_LABELS[r] %></option><% } %>
+      </select>
+      <label class="visually-hidden" for="bulk-note">Ghi chú</label>
+      <input class="form-control form-control-sm w-auto" id="bulk-note" name="note" maxlength="300" placeholder="Ghi chú (tác giả thấy được)" />
+      <button class="btn btn-sm btn-outline-danger" type="submit" name="action" value="reject">Từ chối mục đã chọn</button>
+    </form>
+  <% } %>
+
+  <% if (items.length === 0) { %>
+    <p class="text-secondary"><%= pending ? 'Không có review nào đang chờ duyệt.' : 'Không có review nào.' %></p>
+  <% } %>
+  <% for (const item of items) { %>
+    <%- include('item', { item }) %>
+  <% } %>
+  <%- include('../../partials/pagination', { pager }) %>
+</main>
+<%- include('../../partials/footer') %>

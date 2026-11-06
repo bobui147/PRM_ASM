@@ -1,4 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Gọi API homnayangi.site và tải ảnh. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <application
         android:label="prmgr5"
         android:name="${applicationName}"

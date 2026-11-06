@@ -1,0 +1,43 @@
+/* CSS riêng cho web admin. Bootstrap 5 được nạp trước file này. */
+
+:focus-visible {
+  outline: 3px solid #0d6efd;
+  outline-offset: 2px;
+}
+
+pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* CSP chặn style inline nên mọi kích thước dùng class. */
+.card-narrow {
+  max-width: 640px;
+}
+
+.card-login {
+  max-width: 420px;
+}
+
+.thumb {
+  width: 56px;
+  height: 56px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.thumb-lg {
+  max-width: 240px;
+  max-height: 240px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.pre-line {
+  white-space: pre-line;
+}
+
+.picker-list {
+  max-height: 320px;
+  overflow-y: auto;
+}

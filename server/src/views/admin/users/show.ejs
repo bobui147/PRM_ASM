@@ -1,0 +1,72 @@
+<%- include('../../partials/header') %>
+<main id="main" class="container py-4">
+  <a class="small" href="/admin/users">&larr; Người dùng</a>
+  <h1 class="h4 my-3"><%= user.display_name %></h1>
+  <%- include('../../partials/flash') %>
+  <div class="row g-4">
+    <div class="col-lg-5">
+      <div class="bg-white border rounded p-4 mb-3">
+        <p class="mb-1">Email: <%= user.email %></p>
+        <p class="mb-1">Ngày tạo: <%= fmtDate(user.created_at) %></p>
+        <p class="mb-1">Xác minh email: <%= user.email_verified_at ? fmtDate(user.email_verified_at) : 'Chưa' %></p>
+        <p class="mb-0">Trạng thái:
+          <% if (blocked) { %><strong class="text-danger">Bị khóa <%= user.blocked_permanent ? 'vĩnh viễn' : 'đến ' + fmtDate(user.blocked_until) %></strong> · <%= user.block_reason %>
+          <% } else { %><strong class="text-success">Hoạt động</strong><% } %>
+        </p>
+      </div>
+      <% if (blocked) { %>
+        <form method="post" action="/admin/users/<%= user.id %>/unblock" class="bg-white border rounded p-4" data-confirm="Mở khóa người dùng này?">
+          <input type="hidden" name="_csrf" value="<%= csrf() %>" />
+          <button class="btn btn-success" type="submit">Mở khóa</button>
+        </form>
+      <% } else { %>
+        <form method="post" action="/admin/users/<%= user.id %>/block" class="bg-white border border-danger rounded p-4" data-confirm="Khóa người dùng này?">
+          <input type="hidden" name="_csrf" value="<%= csrf() %>" />
+          <h2 class="h6 text-danger">Khóa tài khoản</h2>
+          <div class="mb-2"><label class="form-label" for="b-duration">Thời hạn</label>
+            <select class="form-select" id="b-duration" name="duration">
+              <% for (const [key, label] of Object.entries(durations)) { %><option value="<%= key %>"<%= key === '7' ? ' selected' : '' %>><%= label %></option><% } %>
+            </select></div>
+          <div class="mb-2"><label class="form-label" for="b-reason">Lý do <span class="text-danger" aria-hidden="true">*</span></label>
+            <input class="form-control" id="b-reason" name="reason" maxlength="255" required /></div>
+          <div class="form-check mb-3"><input class="form-check-input" type="checkbox" id="b-hide" name="hideReviews" />
+            <label class="form-check-label" for="b-hide">Ẩn mọi review đã đăng và từ chối review chờ duyệt</label></div>
+          <button class="btn btn-danger" type="submit">Khóa</button>
+        </form>
+      <% } %>
+    </div>
+    <div class="col-lg-7">
+      <div class="bg-white border rounded p-4 mb-3">
+        <h2 class="h6">Review (<%= reviews.length %>) · <a href="/admin/reviews?user=<%= user.id %>">Xem trong danh sách review</a></h2>
+        <ul class="list-unstyled mb-0">
+          <% if (reviews.length === 0) { %><li class="text-secondary">Chưa có review.</li><% } %>
+          <% for (const r of reviews) { %>
+            <li class="border-bottom py-2">
+              <span class="badge text-bg-light border"><%= labels.REVIEW_STATUS_LABELS[r.status] %></span>
+              <a href="/admin/restaurants/<%= r.restaurant_id %>/edit"><%= r.restaurant_name %></a> · <%= r.rating %>★
+              <%= r.reject_reason ? '· ' + labels.REJECT_REASON_LABELS[r.reject_reason] : '' %>
+              <div class="small text-secondary"><%= r.comment.slice(0, 120) %></div>
+            </li>
+          <% } %>
+        </ul>
+      </div>
+      <div class="bg-white border rounded p-4 mb-3">
+        <h2 class="h6">Báo cáo đã gửi (<%= reports.length %>)</h2>
+        <ul class="list-unstyled mb-0 small">
+          <% if (reports.length === 0) { %><li class="text-secondary">Chưa gửi báo cáo nào.</li><% } %>
+          <% for (const rp of reports) { %><li>Review #<%= rp.review_id %> · <%= labels.REPORT_REASON_LABELS[rp.reason] %> · <%= rp.status %> · <%= fmtDate(rp.created_at) %></li><% } %>
+        </ul>
+      </div>
+      <div class="bg-white border rounded p-4">
+        <h2 class="h6">Lịch sử khóa</h2>
+        <ul class="list-unstyled mb-0 small">
+          <% if (blocks.length === 0) { %><li class="text-secondary">Chưa từng bị khóa.</li><% } %>
+          <% for (const b of blocks) { %>
+            <li><%= fmtDate(b.created_at) %> · <%= b.action === 'block' ? 'Khóa ' + (b.duration_days ? b.duration_days + ' ngày' : 'vĩnh viễn') : 'Mở khóa' %> · <%= b.reason %> · <%= b.username || 'hệ thống' %></li>
+          <% } %>
+        </ul>
+      </div>
+    </div>
+  </div>
+</main>
+<%- include('../../partials/footer') %>

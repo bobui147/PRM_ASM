@@ -1,0 +1,76 @@
+<%# Cột thông tin, ảnh bìa, xóa quán và thực đơn. Tham số: r (quán), menu, available, menuFields. %>
+<div class="col-lg-5">
+  <div class="bg-white border rounded p-4 mb-3">
+    <h2 class="h6">Điểm</h2>
+    <p class="mb-0"><%= r.rating_avg == null ? 'Chưa có đánh giá' : r.rating_avg + '★' %> · <%= r.review_count %> review đã đăng</p>
+  </div>
+  <div class="bg-white border rounded p-4 mb-3">
+    <h2 class="h6">Ảnh bìa</h2>
+    <% if (r.cover_path) { %>
+      <img class="thumb-lg d-block mb-2" src="<%= uploadUrl(r.cover_path) %>" alt="Ảnh bìa <%= r.name %>" />
+      <form method="post" action="/admin/restaurants/<%= r.id %>/cover/delete" data-confirm="Xóa ảnh bìa?">
+        <input type="hidden" name="_csrf" value="<%= csrf() %>" />
+        <button class="btn btn-sm btn-outline-danger" type="submit">Xóa ảnh bìa</button>
+      </form>
+    <% } else { %><p class="text-secondary mb-0">Chưa có ảnh.</p><% } %>
+  </div>
+  <div class="bg-white border border-danger rounded p-4">
+    <h2 class="h6 text-danger">Xóa quán</h2>
+    <p class="small">Xóa vĩnh viễn quán cùng mọi review, ảnh và báo cáo. Muốn tạm ngừng thì chọn trạng thái Ẩn.</p>
+    <form method="post" action="/admin/restaurants/<%= r.id %>/delete" data-confirm="Xóa vĩnh viễn quán &quot;<%= r.name %>&quot; và toàn bộ review?">
+      <input type="hidden" name="_csrf" value="<%= csrf() %>" />
+      <button class="btn btn-sm btn-danger" type="submit">Xóa quán</button>
+    </form>
+  </div>
+</div>
+<section id="menu" class="col-12">
+  <div class="bg-white border rounded p-4">
+    <h2 class="h5">Thực đơn (<%= menu.length %> món)</h2>
+    <form method="post" action="/admin/restaurants/<%= r.id %>/menu" class="row g-2 align-items-end mb-4">
+      <input type="hidden" name="_csrf" value="<%= csrf() %>" />
+      <div class="col-md-5">
+        <label class="form-label" for="m-food">Thêm món</label>
+        <select class="form-select<%= menuFields.foodId ? ' is-invalid' : '' %>" id="m-food" name="foodId">
+          <option value="">Chọn món</option>
+          <% for (const f of available) { %><option value="<%= f.id %>"><%= f.category_name %> · <%= f.name %> (<%= fmtMoney(f.reference_price) %>)</option><% } %>
+        </select>
+        <% if (menuFields.foodId) { %><div class="invalid-feedback"><%= menuFields.foodId %></div><% } %>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label" for="m-price">Giá tại quán</label>
+        <input class="form-control<%= menuFields.price ? ' is-invalid' : '' %>" id="m-price" name="price" type="number" min="1000" step="1000" placeholder="Trống = giá tham khảo" />
+        <% if (menuFields.price) { %><div class="invalid-feedback"><%= menuFields.price %></div><% } %>
+      </div>
+      <div class="col-md-2"><div class="form-check"><input class="form-check-input" type="checkbox" id="m-featured" name="isFeatured" /><label class="form-check-label" for="m-featured">Nổi bật</label></div></div>
+      <div class="col-md-2"><button class="btn btn-primary w-100" type="submit">Thêm</button></div>
+    </form>
+    <div class="table-responsive">
+      <table class="table align-middle mb-0">
+        <thead><tr><th>Món</th><th>Giá · Nổi bật · Thứ tự</th><th></th></tr></thead>
+        <tbody>
+          <% if (menu.length === 0) { %><tr><td colspan="3" class="text-secondary">Chưa có món nào.</td></tr><% } %>
+          <% for (const m of menu) { %>
+            <tr>
+              <td><%= m.name %> <span class="small text-secondary"><%= m.category_name %><%= m.status === 'hidden' ? ' · đang ẩn' : '' %></span></td>
+              <td>
+                <form method="post" action="/admin/restaurants/<%= r.id %>/menu/<%= m.food_id %>" class="row g-2 align-items-center">
+                  <input type="hidden" name="_csrf" value="<%= csrf() %>" />
+                  <div class="col-5"><label class="visually-hidden" for="p-<%= m.food_id %>">Giá</label><input class="form-control form-control-sm" id="p-<%= m.food_id %>" name="price" type="number" min="1000" step="1000" value="<%= m.price == null ? '' : m.price %>" placeholder="<%= m.reference_price %>" /></div>
+                  <div class="col-3"><div class="form-check"><input class="form-check-input" type="checkbox" id="ft-<%= m.food_id %>" name="isFeatured"<%= m.is_featured ? ' checked' : '' %> /><label class="form-check-label" for="ft-<%= m.food_id %>">Nổi bật</label></div></div>
+                  <div class="col-2"><label class="visually-hidden" for="o-<%= m.food_id %>">Thứ tự</label><input class="form-control form-control-sm" id="o-<%= m.food_id %>" name="sortOrder" type="number" value="<%= m.sort_order %>" /></div>
+                  <div class="col-2"><button class="btn btn-sm btn-outline-primary" type="submit">Lưu</button></div>
+                </form>
+              </td>
+              <td class="text-end">
+                <form method="post" action="/admin/restaurants/<%= r.id %>/menu/<%= m.food_id %>/delete" data-confirm="Bỏ món &quot;<%= m.name %>&quot; khỏi thực đơn?">
+                  <input type="hidden" name="_csrf" value="<%= csrf() %>" />
+                  <button class="btn btn-sm btn-outline-danger" type="submit">Bỏ</button>
+                </form>
+              </td>
+            </tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>

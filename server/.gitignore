@@ -1,0 +1,11 @@
+node_modules/
+coverage/
+
+# Biến môi trường thật, không commit. Chỉ commit .env.example.
+.env
+.env.*
+!.env.example
+
+# Ảnh người dùng tải lên và file tạm
+uploads/
+tmp/

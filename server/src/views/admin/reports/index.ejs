@@ -1,0 +1,43 @@
+<%- include('../../partials/header') %>
+<main id="main" class="container-fluid py-4">
+  <h1 class="h4 mb-3"><%= title %></h1>
+  <%- include('../../partials/flash') %>
+  <% if (items.length === 0) { %><p class="text-secondary">Không có báo cáo nào đang mở.</p><% } %>
+  <% for (const item of items) { %>
+    <article class="bg-white border rounded p-3 mb-3<%= item.reports.length >= 3 ? ' border-danger' : '' %>">
+      <div class="d-flex flex-wrap justify-content-between gap-2 mb-2">
+        <div>
+          <strong>Review #<%= item.id %></strong> · <a href="/admin/restaurants/<%= item.restaurantId %>/edit"><%= item.raw.restaurant_name %></a>
+          · <%= '★'.repeat(item.rating) %> · <span class="badge text-bg-danger"><%= item.reports.length %> báo cáo</span>
+        </div>
+        <div class="small">Tác giả: <a href="/admin/users/<%= item.author.id %>"><%= item.author.displayName %></a> (<%= item.raw.author_email %>)</div>
+      </div>
+      <p class="pre-line mb-2"><%= item.comment %></p>
+      <% if (item.images.length > 0) { %>
+        <div class="d-flex gap-2 mb-2"><% for (const img of item.images) { %><a href="<%= img.url %>" target="_blank" rel="noopener"><img class="thumb" src="<%= img.thumbUrl %>" alt="Ảnh review" /></a><% } %></div>
+      <% } %>
+      <ul class="small mb-3">
+        <% for (const rp of item.reports) { %>
+          <li><a href="/admin/users/<%= rp.reporter_id %>"><%= rp.display_name %></a>: <strong><%= labels.REPORT_REASON_LABELS[rp.reason] %></strong><%= rp.details ? ' · ' + rp.details : '' %> <span class="text-secondary">(<%= fmtDate(rp.created_at) %>)</span></li>
+        <% } %>
+      </ul>
+      <div class="d-flex flex-wrap gap-2 align-items-end border-top pt-2">
+        <form method="post" action="/admin/reports/review/<%= item.id %>/hide" class="d-flex flex-wrap gap-2 align-items-end">
+          <input type="hidden" name="_csrf" value="<%= csrf() %>" />
+          <div class="form-check"><input class="form-check-input" type="checkbox" id="rb-<%= item.id %>" name="block" /><label class="form-check-label small" for="rb-<%= item.id %>">Khóa tác giả</label></div>
+          <label class="visually-hidden" for="rd-<%= item.id %>">Thời hạn</label>
+          <select class="form-select form-select-sm w-auto" id="rd-<%= item.id %>" name="duration">
+            <% for (const [key, label] of Object.entries(durations)) { %><option value="<%= key %>"<%= key === '7' ? ' selected' : '' %>><%= label %></option><% } %>
+          </select>
+          <button class="btn btn-sm btn-danger" type="submit">Ẩn review</button>
+        </form>
+        <form method="post" action="/admin/reports/review/<%= item.id %>/dismiss">
+          <input type="hidden" name="_csrf" value="<%= csrf() %>" />
+          <button class="btn btn-sm btn-outline-secondary" type="submit">Bỏ qua báo cáo</button>
+        </form>
+      </div>
+    </article>
+  <% } %>
+  <%- include('../../partials/pagination', { pager }) %>
+</main>
+<%- include('../../partials/footer') %>

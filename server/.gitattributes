@@ -1,0 +1,7 @@
+# Server chạy trên Linux: lưu file văn bản với LF trong repo.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary

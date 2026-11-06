@@ -1,0 +1,47 @@
+<%- include('../../partials/header') %>
+<main id="main" class="container-fluid py-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h4 mb-0">Quán ăn</h1>
+    <a class="btn btn-primary" href="/admin/restaurants/new">Thêm quán</a>
+  </div>
+  <%- include('../../partials/flash') %>
+  <form method="get" class="row g-2 mb-3" role="search">
+    <div class="col-md-3"><label class="visually-hidden" for="q">Tìm tên quán</label><input class="form-control" id="q" name="q" placeholder="Tìm tên quán" value="<%= query.q %>" /></div>
+    <div class="col-md-2"><label class="visually-hidden" for="area">Khu vực</label>
+      <select class="form-select" id="area" name="area"><option value="">Mọi khu vực</option>
+        <% for (const a of areas) { %><option value="<%= a %>"<%= query.area === a ? ' selected' : '' %>><%= labels.AREA_LABELS[a] %></option><% } %>
+      </select></div>
+    <div class="col-md-3"><label class="visually-hidden" for="food">Món bán</label>
+      <select class="form-select" id="food" name="food"><option value="">Mọi món</option>
+        <% for (const f of foods) { %><option value="<%= f.id %>"<%= query.foodId === f.id ? ' selected' : '' %>><%= f.name %></option><% } %>
+      </select></div>
+    <div class="col-md-2"><label class="visually-hidden" for="status">Trạng thái</label>
+      <select class="form-select" id="status" name="status"><option value="">Mọi trạng thái</option>
+        <option value="active"<%= query.status === 'active' ? ' selected' : '' %>>Hiển thị</option>
+        <option value="hidden"<%= query.status === 'hidden' ? ' selected' : '' %>>Ẩn</option>
+      </select></div>
+    <div class="col-md-2"><button class="btn btn-outline-secondary w-100" type="submit">Lọc</button></div>
+  </form>
+  <div class="table-responsive bg-white border rounded">
+    <table class="table table-hover align-middle mb-0">
+      <thead><tr><th>Ảnh</th><th>Tên</th><th>Khu vực</th><th>Giá</th><th>Điểm</th><th>Món</th><th>Trạng thái</th><th></th></tr></thead>
+      <tbody>
+        <% if (rows.length === 0) { %><tr><td colspan="8" class="text-center text-secondary py-4">Chưa có quán nào.</td></tr><% } %>
+        <% for (const r of rows) { %>
+          <tr>
+            <td><% if (r.cover_thumb_path) { %><img class="thumb" src="<%= uploadUrl(r.cover_thumb_path) %>" alt="" /><% } %></td>
+            <td><a href="/admin/restaurants/<%= r.id %>/edit"><%= r.name %></a><div class="small text-secondary"><%= r.address %></div></td>
+            <td><%= labels.AREA_LABELS[r.area] %></td>
+            <td class="text-nowrap"><%= fmtMoney(r.price_min) %> – <%= fmtMoney(r.price_max) %></td>
+            <td><%= r.rating_avg == null ? 'Chưa có' : r.rating_avg + '★' %> (<%= r.review_count %>)</td>
+            <td><%= r.menu_count %></td>
+            <td><span class="badge text-bg-<%= r.status === 'active' ? 'success' : 'secondary' %>"><%= r.status === 'active' ? 'Hiển thị' : 'Ẩn' %></span></td>
+            <td class="text-end"><a class="btn btn-sm btn-outline-primary" href="/admin/restaurants/<%= r.id %>/edit">Sửa</a></td>
+          </tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+  <%- include('../../partials/pagination') %>
+</main>
+<%- include('../../partials/footer') %>
