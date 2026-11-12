@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 import 'app_colors.dart';
 import 'food_spinner_page.dart';
 import 'pages/account_page.dart';
+import 'pages/community_page.dart';
 import 'pages/history_page.dart';
 import 'pages/manage_foods_page.dart';
+import 'pages/meal_plan_page.dart';
 import 'services/app_services.dart';
 
-/// Khung chính với thanh điều hướng dưới: Quay · Lịch sử · Món ăn · Tài khoản.
+/// Khung chính với thanh điều hướng dưới: Quay · Cộng đồng · Thực đơn · Lịch sử · Món ăn · Tài khoản.
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key, this.services});
 
@@ -57,6 +59,8 @@ class _HomeShellState extends State<HomeShell> {
         index: _index,
         children: [
           FoodSpinnerPage(services: _services),
+          CommunityPage(services: _services),
+          MealPlanPage(services: _services),
           HistoryPage(library: _services.library),
           ManageFoodsPage(services: _services),
           AccountPage(services: _services),
@@ -66,12 +70,24 @@ class _HomeShellState extends State<HomeShell> {
         key: const Key('main-navigation'),
         backgroundColor: AppColors.chrome,
         selectedIndex: _index,
+        // 6 tab: chỉ hiện nhãn tab đang chọn để vừa màn hình 360 dp.
+        labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
         onDestinationSelected: (index) => setState(() => _index = index),
         destinations: const [
           NavigationDestination(
             key: Key('nav-spin'),
             icon: Icon(Icons.inventory_2_outlined),
             label: 'Quay',
+          ),
+          NavigationDestination(
+            key: Key('nav-community'),
+            icon: Icon(Icons.forum_outlined),
+            label: 'Cộng đồng',
+          ),
+          NavigationDestination(
+            key: Key('nav-plan'),
+            icon: Icon(Icons.event_note_outlined),
+            label: 'Thực đơn',
           ),
           NavigationDestination(
             key: Key('nav-history'),

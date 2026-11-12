@@ -6,7 +6,7 @@ const path = require('node:path');
 const mysql = require('mysql2/promise');
 
 const MIGRATIONS_DIR = path.join(__dirname, '..', 'migrations');
-const FILE_PATTERN = /^(\d{3})_[a-z0-9_]+\.sql$/;
+const FILE_PATTERN = /^(\d{3})_[a-z0-9_]+\.(sql|js)$/;
 const LOCK_NAME = 'homnayangi_migrate';
 const LOCK_TIMEOUT_SECONDS = 30;
 
@@ -19,10 +19,12 @@ function checksum(sql) {
 
 /** Đọc và kiểm tra tên các file migration, sắp xếp theo số thứ tự. */
 async function listMigrationFiles(dir = MIGRATIONS_DIR) {
-  const names = (await fs.readdir(dir)).filter((name) => name.endsWith('.sql')).sort();
+  const names = (await fs.readdir(dir)).filter((name) => /\.(sql|js)$/.test(name)).sort();
   const invalid = names.filter((name) => !FILE_PATTERN.test(name));
   if (invalid.length > 0) {
-    throw new Error(`Tên file migration không hợp lệ: ${invalid.join(', ')} (cần dạng 001_ten_file.sql)`);
+    throw new Error(
+      `Tên file migration không hợp lệ: ${invalid.join(', ')} (cần dạng 001_ten_file.sql hoặc 004_ten_file.js)`,
+    );
   }
   const seen = new Map();
   for (const name of names) {
@@ -34,10 +36,28 @@ async function listMigrationFiles(dir = MIGRATIONS_DIR) {
   }
   return Promise.all(
     names.map(async (name) => {
-      const sql = await fs.readFile(path.join(dir, name), 'utf8');
-      return { name, sql, checksum: checksum(sql) };
+      const fullPath = path.join(dir, name);
+      const source = await fs.readFile(fullPath, 'utf8');
+      const kind = name.endsWith('.js') ? 'js' : 'sql';
+      return { name, kind, path: fullPath, sql: kind === 'sql' ? source : null, checksum: checksum(source) };
     }),
   );
+}
+
+/**
+ * Chạy một migration. File .sql chạy nguyên khối (multipleStatements);
+ * file .js phải export `async up(conn)` và tự gọi conn.query(...).
+ */
+async function applyMigration(conn, file) {
+  if (file.kind === 'sql') {
+    await conn.query(file.sql);
+    return;
+  }
+  const migration = require(file.path);
+  if (typeof migration.up !== 'function') {
+    throw new Error('File migration .js phải export hàm up(conn)');
+  }
+  await migration.up(conn);
 }
 
 /** Kết nối riêng cho migrate: cần multipleStatements, không dùng cho request. */
@@ -101,7 +121,7 @@ async function runMigrations({ db, dir = MIGRATIONS_DIR, logger = silentLogger }
       for (const file of files.filter((candidate) => !applied.has(candidate.name))) {
         logger.info(`Đang chạy ${file.name}`);
         try {
-          await conn.query(file.sql);
+          await applyMigration(conn, file);
         } catch (error) {
           throw new Error(
             `Migration ${file.name} lỗi: ${error.message}. ` +

@@ -12,6 +12,7 @@ const { recalculateRestaurantRating } = require('../../services/rating');
 const { toUserDto } = require('../dto');
 const { revokeAllForUser, createSession } = require('../auth/token.service');
 const { listMyReviews } = require('../reviews/review.service');
+const { purgeOrphanReports } = require('../community/community.service');
 const schema = require('../auth/auth.schema');
 const { pageQuery } = require('../../utils/http');
 
@@ -56,19 +57,22 @@ function createMeRouter() {
 
   router.delete('/', validate({ body: schema.deleteMeBody }), async (req, res) => {
     await checkPassword(req.user.id, req.valid.body.password);
-    const reviewIds = await withTransaction(async (conn) => {
+    // CASCADE xóa review, bài, bình luận, lượt thích, theo dõi, phòng, thực đơn của tài khoản.
+    const { reviewIds, postIds } = await withTransaction(async (conn) => {
       const [reviews] = await conn.query('SELECT id, restaurant_id FROM reviews WHERE user_id = ?', [req.user.id]);
+      const [posts] = await conn.query('SELECT id FROM posts WHERE user_id = ?', [req.user.id]);
       await conn.query('DELETE FROM users WHERE id = ?', [req.user.id]);
       for (const restaurantId of new Set(reviews.map((review) => review.restaurant_id))) {
         await recalculateRestaurantRating(conn, restaurantId);
       }
-      return reviews.map((review) => review.id);
+      // Báo cáo trỏ tới bài/bình luận vừa bị xóa (FR-C05).
+      await purgeOrphanReports(conn);
+      return { reviewIds: reviews.map((review) => review.id), postIds: posts.map((post) => post.id) };
     });
     const storage = getStorage();
-    for (const id of reviewIds) {
-      await storage
-        .removeDir(`reviews/${id}`)
-        .catch((error) => req.log?.warn({ err: error }, 'Không xóa được ảnh review'));
+    const dirs = [...reviewIds.map((id) => `reviews/${id}`), ...postIds.map((id) => `posts/${id}`)];
+    for (const dir of dirs) {
+      await storage.removeDir(dir).catch((error) => req.log?.warn({ err: error }, 'Không xóa được thư mục ảnh'));
     }
     res.status(204).end();
   });

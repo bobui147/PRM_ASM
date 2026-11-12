@@ -141,10 +141,11 @@ class FoodLibrary extends ChangeNotifier {
     };
   }
 
-  /// Món đủ điều kiện quay: đúng nhóm/bữa và không bị ẩn.
+  /// Món đủ điều kiện quay: đúng nhóm/bữa, đúng khoảng giá và không bị ẩn.
   List<FoodItem> eligibleFoods(MealPeriod mealPeriod) =>
       filterFoods(allFoods, category, mealPeriod)
           .where((food) => !_excludedIds.contains(food.id))
+          .where((food) => _budget.accepts(food.price))
           .toList(growable: false);
 
   void setCategory(FoodCategory category) {

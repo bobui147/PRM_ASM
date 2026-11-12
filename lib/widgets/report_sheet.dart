@@ -10,20 +10,32 @@ Future<bool> showReportSheet(
   BuildContext context, {
   required Review review,
   required RestaurantRepository repository,
+}) =>
+    showContentReportSheet(
+      context,
+      title: 'Báo cáo review',
+      submit: (reason, details) => repository.reportReview(review.id, reason, details),
+    );
+
+/// Bottom sheet báo cáo dùng chung (review, bài, bình luận). [submit] gửi lên server.
+Future<bool> showContentReportSheet(
+  BuildContext context, {
+  required String title,
+  required Future<void> Function(ReportReason reason, String? details) submit,
 }) async {
   final sent = await showModalBottomSheet<bool>(
     context: context,
     isScrollControlled: true,
-    builder: (_) => _ReportSheet(review: review, repository: repository),
+    builder: (_) => _ReportSheet(title: title, submit: submit),
   );
   return sent == true;
 }
 
 class _ReportSheet extends StatefulWidget {
-  const _ReportSheet({required this.review, required this.repository});
+  const _ReportSheet({required this.title, required this.submit});
 
-  final Review review;
-  final RestaurantRepository repository;
+  final String title;
+  final Future<void> Function(ReportReason reason, String? details) submit;
 
   @override
   State<_ReportSheet> createState() => _ReportSheetState();
@@ -57,12 +69,12 @@ class _ReportSheetState extends State<_ReportSheet> {
     });
     final messenger = ScaffoldMessenger.of(context);
     try {
-      await widget.repository.reportReview(widget.review.id, reason, _details.text);
+      await widget.submit(reason, _details.text);
       messenger.showSnackBar(const SnackBar(content: Text('Đã tiếp nhận báo cáo')));
       if (mounted) Navigator.of(context).pop(true);
     } on ApiException catch (error) {
       if (error.code == 'ALREADY_REPORTED') {
-        messenger.showSnackBar(const SnackBar(content: Text('Bạn đã báo cáo review này')));
+        messenger.showSnackBar(const SnackBar(content: Text('Bạn đã báo cáo nội dung này')));
         if (mounted) Navigator.of(context).pop(false);
         return;
       }
@@ -83,7 +95,7 @@ class _ReportSheetState extends State<_ReportSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Báo cáo review', style: Theme.of(context).textTheme.titleMedium),
+            Text(widget.title, style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
             RadioGroup<ReportReason>(
               groupValue: _reason,

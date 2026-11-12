@@ -10,6 +10,19 @@ const { runMigrations } = require('../../src/migrator');
 // khởi tạo của migration (food_categories, app_settings) để giữ đúng trạng thái
 // sau khi migrate.
 const DATA_TABLES = [
+  'content_reports',
+  'post_comments',
+  'post_likes',
+  'post_images',
+  'posts',
+  'user_follows',
+  'group_room_votes',
+  'group_room_candidates',
+  'group_room_marks',
+  'group_room_members',
+  'group_rooms',
+  'meal_plan_items',
+  'want_to_try',
   'admin_audit_logs',
   'review_reports',
   'review_images',

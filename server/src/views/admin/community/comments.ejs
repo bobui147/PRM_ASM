@@ -1,0 +1,49 @@
+<%- include('../../partials/header') %>
+<main id="main" class="container-fluid py-4">
+  <h1 class="h4 mb-3"><%= title %><%= query.postId ? ' · bài #' + query.postId : '' %></h1>
+  <%- include('../../partials/flash') %>
+  <form method="get" class="row g-2 mb-3 bg-white border rounded p-3">
+    <div class="col-md-3"><label class="form-label small" for="q-status">Trạng thái</label>
+      <select class="form-select form-select-sm" id="q-status" name="status">
+        <option value="">Tất cả</option>
+        <% for (const [key, label] of Object.entries(statusLabels)) { %><option value="<%= key %>"<%= query.status === key ? ' selected' : '' %>><%= label %></option><% } %>
+      </select></div>
+    <div class="col-md-5"><label class="form-label small" for="q-text">Tìm nội dung hoặc tác giả</label>
+      <input class="form-control form-control-sm" id="q-text" name="q" maxlength="100" value="<%= query.q %>" /></div>
+    <% if (query.postId) { %><input type="hidden" name="post" value="<%= query.postId %>" /><% } %>
+    <div class="col-md-4 d-flex align-items-end gap-2"><button class="btn btn-sm btn-primary" type="submit">Lọc</button><a class="btn btn-sm btn-outline-secondary" href="/admin/community/comments">Bỏ lọc</a></div>
+  </form>
+  <% if (items.length === 0) { %><p class="text-secondary">Không có bình luận nào.</p><% } else { %>
+  <div class="table-responsive bg-white border rounded">
+    <table class="table table-sm align-middle mb-0">
+      <thead><tr><th>#</th><th>Bài</th><th>Tác giả</th><th>Nội dung</th><th>Trạng thái</th><th>Thời gian</th><th></th></tr></thead>
+      <tbody>
+        <% for (const c of items) { %>
+          <tr>
+            <td><%= c.id %></td>
+            <td><a href="/admin/community/comments?post=<%= c.post_id %>">#<%= c.post_id %></a></td>
+            <td><a href="/admin/users/<%= c.user_id %>"><%= c.display_name %></a><div class="small text-secondary"><%= c.email %></div></td>
+            <td class="pre-line"><%= c.content %><% if (c.open_reports > 0) { %> <span class="badge text-bg-danger"><%= c.open_reports %> báo cáo</span><% } %></td>
+            <td><span class="badge <%= c.status === 'hidden' ? 'text-bg-warning' : 'text-bg-success' %>"><%= statusLabels[c.status] %></span></td>
+            <td class="small text-nowrap"><%= fmtDate(c.created_at) %></td>
+            <td class="text-nowrap">
+              <form method="post" action="/admin/community/comments/<%= c.id %>/<%= c.status === 'hidden' ? 'unhide' : 'hide' %>" class="d-inline">
+                <input type="hidden" name="_csrf" value="<%= csrf() %>" />
+                <input type="hidden" name="back" value="<%= back %>" />
+                <button class="btn btn-sm <%= c.status === 'hidden' ? 'btn-outline-success' : 'btn-outline-warning' %>" type="submit"><%= c.status === 'hidden' ? 'Hiện lại' : 'Ẩn' %></button>
+              </form>
+              <form method="post" action="/admin/community/comments/<%= c.id %>/delete" class="d-inline" data-confirm="Xóa vĩnh viễn bình luận #<%= c.id %>?">
+                <input type="hidden" name="_csrf" value="<%= csrf() %>" />
+                <input type="hidden" name="back" value="<%= back %>" />
+                <button class="btn btn-sm btn-outline-danger" type="submit">Xóa</button>
+              </form>
+            </td>
+          </tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+  <% } %>
+  <%- include('../../partials/pagination', { pager }) %>
+</main>
+<%- include('../../partials/footer') %>

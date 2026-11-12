@@ -90,16 +90,28 @@ enum FoodRarity {
   final Color color;
 }
 
+/// Khoảng giá: mỗi mức là một khoảng liền kề (mốc dưới, mốc này].
+/// 50.000đ: 0–50k · 100.000đ: trên 50k–100k · 150.000đ: trên 100k–150k.
 enum FoodBudget {
-  fifty('50.000đ', 50000),
-  hundred('100.000đ', 100000),
-  hundredFifty('150.000đ', 150000),
-  unlimited('Không giới hạn', null);
+  fifty('Tới 50.000đ', 50000, 0),
+  hundred('50.000đ – 100.000đ', 100000, 50000),
+  hundredFifty('100.000đ – 150.000đ', 150000, 100000),
+  unlimited('Không giới hạn', null, 0);
 
-  const FoodBudget(this.label, this.targetPrice);
+  const FoodBudget(this.label, this.targetPrice, this.minPrice);
 
   final String label;
+
+  /// Giá tối đa (bao gồm); null = không giới hạn.
   final int? targetPrice;
+
+  /// Giá tối thiểu (không bao gồm).
+  final int minPrice;
+
+  bool accepts(int price) {
+    final max = targetPrice;
+    return price > minPrice && (max == null || price <= max);
+  }
 }
 
 /// Món ăn lấy từ `GET /catalog`. `id` là id số của server dạng chuỗi.
@@ -230,6 +242,13 @@ FoodItem pickFood(
 }) {
   if (foods.isEmpty) {
     throw ArgumentError.value(foods, 'foods', 'must not be empty');
+  }
+
+  // Món đã quay gần đây bị loại hẳn nếu còn món khác để chọn; chỉ khi mọi món
+  // đều vừa quay mới cho quay lại (tránh lặp mãi một món khi kho nhỏ).
+  final fresh = foods.where((food) => !recentIds.contains(food.id)).toList();
+  if (fresh.isNotEmpty) {
+    foods = fresh;
   }
 
   int weightOf(FoodItem food) => spinWeight(

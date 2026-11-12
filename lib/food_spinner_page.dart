@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import 'models/food_item.dart';
+import 'pages/group_room_page.dart';
 import 'services/app_services.dart';
 import 'services/food_library.dart';
 import 'services/share_launcher.dart';
@@ -316,6 +317,13 @@ class _FoodSpinnerPageState extends State<FoodSpinnerPage>
                 foods.isEmpty ? _buildEmptyReel() : _buildSpinner(),
                 const SizedBox(height: 16),
                 _buildSpinButton(),
+                const SizedBox(height: 10),
+                OutlinedButton.icon(
+                  key: const Key('group-pick'),
+                  onPressed: () => openGroupPicking(context, widget.services),
+                  icon: const Icon(Icons.groups_outlined),
+                  label: const Text('Chọn món cùng nhóm'),
+                ),
                 const SizedBox(height: 26),
                 _buildInventory(foods),
               ],
@@ -402,7 +410,7 @@ class _FoodSpinnerPageState extends State<FoodSpinnerPage>
   Widget _buildBudgetSelector() {
     final budgetHint = _budget.targetPrice == null
         ? 'Mọi mức giá đều có cơ hội như nhau.'
-        : 'Tầm ${_budget.label} · Món quay ra có thể rẻ hoặc đắt hơn.';
+        : 'Chỉ quay món trong khoảng ${_budget.label}.';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -653,7 +661,7 @@ class _FoodSpinnerPageState extends State<FoodSpinnerPage>
               border: Border.all(color: _hairlineColor),
             ),
             child: const Text(
-              'Kho hiện không có món phù hợp với lựa chọn của bạn.',
+              'Không có món nào khớp nhóm, bữa và khoảng giá đã chọn. Thử đổi bữa (bấm lại nhóm món) hoặc khoảng giá.',
               textAlign: TextAlign.center,
               style: TextStyle(color: _mutedTextColor),
             ),

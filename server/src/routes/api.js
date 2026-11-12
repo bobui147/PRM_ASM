@@ -8,6 +8,9 @@ const { createMeRouter } = require('../modules/users/me.routes');
 const { createCatalogRouter } = require('../modules/catalog/catalog.routes');
 const { createRestaurantRouter } = require('../modules/restaurants/restaurant.routes');
 const { createReviewRouter } = require('../modules/reviews/review.routes');
+const { createCommunityRouter } = require('../modules/community/community.routes');
+const { createGroupRouter } = require('../modules/groups/group.routes');
+const { createMealPlanRouter } = require('../modules/meal-plans/meal-plan.routes');
 
 /** Router /api/v1 (requirements §13). */
 function createApiRouter({ checkDatabase, config }) {
@@ -44,6 +47,10 @@ function createApiRouter({ checkDatabase, config }) {
   });
 
   router.use('/auth', createAuthRouter());
+  // Router mở rộng có đường dẫn /me/... riêng nên gắn trước /me.
+  router.use(createCommunityRouter());
+  router.use(createMealPlanRouter());
+  router.use(createGroupRouter());
   router.use('/me', createMeRouter());
   router.use(createCatalogRouter());
   router.use(createRestaurantRouter());

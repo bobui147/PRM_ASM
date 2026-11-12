@@ -51,4 +51,39 @@ const reviewEditLimiter = createLimiter({
   message: 'Bạn đã sửa review quá nhiều lần hôm nay, vui lòng thử lại sau',
 });
 
-module.exports = { createLimiter, writeLimiter, authLimiter, reviewEditLimiter };
+// requirements-mo-rong.md: mỗi nhóm chức năng mới có bộ đếm IP riêng để thao tác nhanh
+// (thích, chọn món trong phòng) không làm cạn quota ghi của review.
+const communityWriteLimiter = createLimiter({
+  windowMs: 15 * MINUTE,
+  limit: 60,
+  message: 'Bạn thao tác quá nhiều, vui lòng thử lại sau',
+});
+
+const interactionLimiter = createLimiter({
+  windowMs: 15 * MINUTE,
+  limit: 300,
+  message: 'Bạn thao tác quá nhanh, vui lòng thử lại sau',
+});
+
+const roomLimiter = createLimiter({
+  windowMs: 15 * MINUTE,
+  limit: 400,
+  message: 'Bạn thao tác trong phòng quá nhanh, vui lòng thử lại sau',
+});
+
+const mealPlanLimiter = createLimiter({
+  windowMs: 15 * MINUTE,
+  limit: 200,
+  message: 'Bạn thao tác quá nhiều, vui lòng thử lại sau',
+});
+
+module.exports = {
+  createLimiter,
+  writeLimiter,
+  authLimiter,
+  reviewEditLimiter,
+  communityWriteLimiter,
+  interactionLimiter,
+  roomLimiter,
+  mealPlanLimiter,
+};

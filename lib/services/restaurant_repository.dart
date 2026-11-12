@@ -51,6 +51,16 @@ class RestaurantRepository {
     return PageResult.fromJson(response.json, Restaurant.fromJson);
   }
 
+  /// FR-P03: tìm quán theo tên (dùng khi gắn quán vào bài cộng đồng).
+  Future<PageResult<Restaurant>> search({String? q, int page = 1}) async {
+    final response = await _api.get('/restaurants', query: {
+      'page': page,
+      'limit': 20,
+      if (q != null && q.trim().isNotEmpty) 'q': q.trim(),
+    });
+    return PageResult.fromJson(response.json, Restaurant.fromJson);
+  }
+
   /// FR-P03: chi tiết quán kèm thực đơn và phân bố sao.
   Future<Restaurant> restaurant(int id) async {
     final response = await _api.get('/restaurants/$id');

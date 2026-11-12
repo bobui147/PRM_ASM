@@ -6,6 +6,7 @@ import '../widgets/common.dart';
 import 'account_actions.dart';
 import 'auth_pages.dart';
 import 'my_reviews_page.dart';
+import 'profile_page.dart';
 
 /// Tab Tài khoản (FR-M10).
 class AccountPage extends StatelessWidget {
@@ -34,7 +35,7 @@ class AccountPage extends StatelessWidget {
       const Icon(Icons.account_circle_outlined, size: 72, color: AppColors.gold),
       const SizedBox(height: 12),
       const Text(
-        'Đăng nhập để viết review, đăng ảnh và báo cáo nội dung không phù hợp.',
+        'Đăng nhập để viết review, đăng bài cộng đồng, chọn món cùng nhóm và lên thực đơn.',
         textAlign: TextAlign.center,
         style: TextStyle(color: AppColors.text),
       ),
@@ -84,6 +85,9 @@ class AccountPage extends StatelessWidget {
       const Divider(),
       item(Icons.rate_review_outlined, 'Review của tôi', key: const Key('my-reviews'), () {
         Navigator.of(context).push(MaterialPageRoute(builder: (_) => MyReviewsPage(services: services)));
+      }),
+      item(Icons.dynamic_feed_outlined, 'Bài cộng đồng của tôi', key: const Key('account-my-posts'), () {
+        Navigator.of(context).push(MaterialPageRoute(builder: (_) => MyPostsPage(services: services)));
       }),
       item(Icons.badge_outlined, 'Đổi tên hiển thị', () => renameAccount(context, services)),
       item(Icons.lock_outline, 'Đổi mật khẩu', () => changeAccountPassword(context, services)),

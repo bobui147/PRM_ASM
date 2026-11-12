@@ -221,3 +221,70 @@ Ghi lại ở đây những thay đổi so với `requirements.md` trong quá tr
 - **06/11/2026, Phase 1:** CSP chặn `style` và `script` inline, nên view EJS chỉ dùng class CSS (file `public/css/admin.css`).
 - **06/11/2026, Phase 1:** `server/.gitattributes` ép LF khi commit (server chạy Linux). Prettier dùng `endOfLine: auto` vì máy dev Windows bật `core.autocrlf=true`.
 - **06/11/2026, Phase 1:** Thêm `HOST` (mặc định `127.0.0.1`) và `DB_CONNECTION_LIMIT` (mặc định 10) vào `.env.example`. Production bắt buộc `https://`, `MAIL_TRANSPORT=smtp` và ba secret khác nhau. Đã bổ sung vào bảng §16.3 của `requirements.md`.
+
+---
+
+# TASKS mở rộng — theo `requirements-mo-rong.md`
+
+Mã task: `X` = server/web admin, `G` = Flutter. Tham chiếu `FR-C`, `FR-G`, `FR-PM`.
+
+## Quy tắc đã chốt (mục 7, 13/11/2026)
+
+- **Cộng đồng:** bài và bình luận hiển thị ngay, admin xử lý theo báo cáo (không hàng chờ duyệt). Bài tối đa 2.000 ký tự, 3 ảnh × 5 MB; bình luận tối đa 500 ký tự. Mỗi người tối đa 10 bài, 60 bình luận và 10 báo cáo cộng đồng / 24 giờ. Xóa bài/bình luận thì xóa luôn báo cáo của nội dung đó; nhật ký admin chỉ ghi mã nội dung, không ghi nội dung.
+- **Nhóm:** 1 thành viên loại món = món bị loại khỏi kết quả chung. Nếu có ít nhất một món được "chọn" thì ứng viên = các món được chọn và không bị ai loại; nếu không ai chọn thì ứng viên = mọi món khớp bộ lọc và không bị loại. Bỏ phiếu hòa → server quay ngẫu nhiên trong các món hòa; người không bỏ phiếu bị bỏ qua; không có phiếu nào thì không chốt được. Tối đa 10 thành viên, phòng hết hạn sau 24 giờ, mỗi người ở tối đa 1 phòng đang hoạt động, chỉ tài khoản đã xác minh. Đồng bộ bằng polling 2–3 giây theo `version` của phòng.
+- **Thực đơn:** đồng bộ theo tài khoản trên server. Không có nhắc giờ, dinh dưỡng, tự tạo món.
+- **Thông báo:** không có push notification.
+- **DB:** từ migration 004 trở đi viết bằng file Node.js (`migrations/NNN_ten.js`, export `up(conn)`), chạy bằng `npm run migrate` như file `.sql` cũ.
+
+## Phase X0 — Nền tảng
+
+- [x] **X0.1** `migrator.js` hỗ trợ migration `.js` (checksum, khóa, thứ tự chung với `.sql`); chạy trực tiếp `node migrations/NNN_x.js` cũng được.
+- [x] **X0.2** Cập nhật test migration và helper xóa dữ liệu test cho bảng mới.
+
+## P1 — Cộng đồng ẩm thực
+
+- [x] **X1.1** `004_community.js`: `posts`, `post_images`, `post_likes`, `post_comments`, `user_follows`, `content_reports`. (FR-C01..C04)
+- [x] **X1.2** API bài đăng: tạo/sửa (multipart, `keepImageIds`), xóa (xóa ảnh), chi tiết, gắn món/quán còn công khai. (FR-C01)
+- [x] **X1.3** Bảng tin `latest`/`following`, `GET /me/posts`, hồ sơ công khai `GET /users/:id`, `GET /users/:id/posts`. (FR-C02)
+- [x] **X1.4** Thích/bỏ thích, bình luận (thêm, xóa, phân trang), theo dõi/bỏ theo dõi. (FR-C03)
+- [x] **X1.5** Báo cáo bài/bình luận, chặn tự báo cáo và báo cáo trùng đang mở. (FR-C04)
+- [x] **X1.6** Web admin: danh sách bài, bình luận, báo cáo cộng đồng; ẩn, hiện, xóa, bỏ qua, khóa tác giả; ghi nhật ký. (FR-C04)
+- [x] **X1.7** Xóa tài khoản xóa dữ liệu cộng đồng, ảnh bài và báo cáo mồ côi. (FR-C05)
+- [x] **X1.8** Test server P1 (tiêu chí 1–6).
+- [x] **G1.1** Model + `CommunityRepository`; `ApiClient.put`.
+- [x] **G1.2** Tab **Cộng đồng**: bảng tin Mới nhất/Đang theo dõi, cuộn vô hạn, trạng thái tải/trống/lỗi.
+- [x] **G1.3** Form đăng/sửa bài (bộ đếm, 3 ảnh, chọn món/quán, thông báo công khai lần đầu), chi tiết bài (ảnh lớn, thích, bình luận, báo cáo, xóa có xác nhận).
+- [x] **G1.4** Hồ sơ công khai (theo dõi) và **Bài của tôi** (thấy trạng thái bị ẩn).
+- [x] **G1.5** Widget test P1.
+
+## P2 — Chọn món theo nhóm
+
+- [x] **X2.1** `005_group_rooms.js`: `group_rooms`, `group_room_members`, `group_room_marks`, `group_room_candidates`, `group_room_votes`. (FR-G01, FR-G02)
+- [x] **X2.2** API phòng: tạo, tham gia bằng mã, phòng hiện tại, trạng thái theo `version`, đổi bộ lọc, rời, kết thúc. (FR-G01)
+- [x] **X2.3** Chọn/loại món, bắt đầu bỏ phiếu hoặc quay, bỏ phiếu, chốt (khóa dòng chống chốt đồng thời), quay lại bước chọn. (FR-G02)
+- [x] **X2.4** Web admin: danh sách phòng, kết thúc phòng, ghi nhật ký.
+- [x] **X2.5** Test server P2 (tiêu chí 7–8).
+- [x] **G2.1** Model + `GroupRepository`; màn hình tạo/tham gia phòng (chia sẻ, sao chép mã) từ tab Quay.
+- [x] **G2.2** Màn hình phòng: polling, thành viên, chọn/loại món, bỏ phiếu, kết quả, rời/kết thúc, khôi phục phòng khi mở lại app.
+- [x] **G2.3** Widget test P2.
+
+## P3 — Lập thực đơn
+
+- [x] **X3.1** `006_meal_plans.js`: `meal_plan_items`, `want_to_try`. (FR-PM01, FR-PM02)
+- [x] **X3.2** API kế hoạch theo khoảng ngày, thêm, chuyển, xóa, đánh dấu/hoàn tác đã ăn, lịch sử đã ăn, danh sách muốn thử.
+- [x] **X3.3** Test server P3 (tiêu chí 9–10).
+- [x] **G3.1** Model + `MealPlanRepository`; tab **Thực đơn**: ngày/tuần, thêm món, chuyển, xóa, đã ăn.
+- [x] **G3.2** Danh sách **Muốn thử** (thêm bằng hộp chọn món trong tab) và **Lịch sử đã ăn**.
+- [x] **G3.3** Widget test P3.
+
+## Hoàn tất
+
+- [-] **XG.1** `npm run lint` sạch; 37 test API mới (`tests/api/*`) và test migration xanh; `flutter analyze lib` sạch; `test/extensions_test.dart` 15/15 xanh; đã cập nhật README server. _Còn lại (có từ trước, không thuộc phần mở rộng):_ `tests/app.test.js` mong `/admin` trả 200 nhưng trang cần đăng nhập (302); `tests/config.test.js` lệch hoa/thường ổ đĩa trên Windows; `test/widget_test.dart` và `test/features_test.dart` còn dùng API cũ (`data/sample_foods.dart`, `food_form_page.dart` đã xóa) nên không biên dịch. Jest cần `--forceExit` vì còn kết nối mở sau khi chạy.
+- [ ] **XG.2** Thử tay Android + Flutter Web, nhiều thiết bị cùng phòng (người làm: nhóm).
+
+## Ghi chú triển khai mở rộng
+
+- Chạy `cd server && npm run migrate` để áp dụng `004_community.js`, `005_group_rooms.js`, `006_meal_plans.js` (hoặc chạy trực tiếp `node migrations/004_community.js`, lệnh này chạy mọi migration còn thiếu theo thứ tự).
+- Ảnh bài viết lưu ở `uploads/posts/{id}/`, xử lý giống ảnh review (kiểm tra nội dung file, xoay EXIF, xóa metadata, WebP).
+- Mỗi nhóm chức năng mới có bộ đếm tần suất IP riêng (`communityWriteLimiter`, `interactionLimiter`, `roomLimiter`, `mealPlanLimiter`) để thao tác nhanh (thích, chọn món trong phòng) không làm cạn quota 60 request ghi của review. Tham gia phòng bằng mã giới hạn 30 lần / 15 phút / người để chống dò mã.
+- Thanh điều hướng app có 6 tab (Quay · Cộng đồng · Thực đơn · Lịch sử · Món ăn · Tài khoản), chỉ hiện nhãn tab đang chọn. Nút **Chọn món cùng nhóm** nằm dưới nút quay ở tab Quay.

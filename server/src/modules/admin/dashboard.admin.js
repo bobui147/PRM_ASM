@@ -16,7 +16,10 @@ function createDashboardRouter() {
          (SELECT COUNT(*) FROM users) AS users,
          (SELECT COUNT(*) FROM users WHERE blocked_permanent OR blocked_until > UTC_TIMESTAMP()) AS blocked_users,
          (SELECT COUNT(*) FROM foods) AS foods,
-         (SELECT COUNT(*) FROM restaurants WHERE status = 'active') AS active_restaurants`,
+         (SELECT COUNT(*) FROM restaurants WHERE status = 'active') AS active_restaurants,
+         (SELECT COUNT(*) FROM posts WHERE status = 'visible') AS visible_posts,
+         (SELECT COUNT(*) FROM content_reports WHERE status = 'open') AS open_content_reports,
+         (SELECT COUNT(*) FROM group_rooms WHERE phase IN ('selecting', 'voting') AND expires_at > UTC_TIMESTAMP()) AS active_rooms`,
     );
     const [hotReports] = await pool.query(
       `SELECT rv.id, r.name AS restaurant_name, COUNT(*) AS report_count

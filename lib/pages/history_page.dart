@@ -123,7 +123,7 @@ class _StatsCard extends StatelessWidget {
           ],
           const SizedBox(height: 6),
           const Text(
-            'Món đã quay trong $recentDayWindow ngày gần nhất sẽ ít được chọn lại hơn.',
+            'Món đã quay trong $recentDayWindow ngày gần nhất sẽ không bị quay lại (trừ khi không còn món khác).',
             style: TextStyle(color: AppColors.mutedText, fontSize: 12),
           ),
         ],

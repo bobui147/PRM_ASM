@@ -26,6 +26,7 @@ class AppStorage {
   static const budgetKey = 'selected_budget';
   static const catalogKey = 'catalog_cache';
   static const reviewNoticeKey = 'review_notice_seen';
+  static const communityNoticeKey = 'community_notice_seen';
 
   // Khóa của bản cũ dùng id dạng "pho-bo", không khớp id mới (FR-M03).
   static const _legacyKeys = [
@@ -102,6 +103,13 @@ class AppStorage {
 
   Future<void> writeReviewNoticeSeen() async {
     await _prefs.setBool(reviewNoticeKey, true);
+  }
+
+  /// FR-C05: đã thông báo nội dung cộng đồng sẽ công khai.
+  bool readCommunityNoticeSeen() => _prefs.getBool(communityNoticeKey) ?? false;
+
+  Future<void> writeCommunityNoticeSeen() async {
+    await _prefs.setBool(communityNoticeKey, true);
   }
 
   Set<String> _readIds(String key) =>

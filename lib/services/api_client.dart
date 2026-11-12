@@ -97,6 +97,9 @@ class ApiClient {
   Future<ApiResponse> post(String path, [Object? body]) =>
       _send(() => _jsonRequest('POST', path, body));
 
+  Future<ApiResponse> put(String path, [Object? body]) =>
+      _send(() => _jsonRequest('PUT', path, body));
+
   Future<ApiResponse> patch(String path, Object? body) =>
       _send(() => _jsonRequest('PATCH', path, body));
 
