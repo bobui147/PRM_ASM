@@ -3,11 +3,10 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:prmgr5/data/sample_foods.dart';
+import 'support/test_services.dart';
 import 'package:prmgr5/food_spinner_page.dart';
 import 'package:prmgr5/main.dart';
 import 'package:prmgr5/models/food_item.dart';
-import 'package:prmgr5/services/food_library.dart';
 import 'package:prmgr5/services/maps_launcher.dart';
 
 void main() {
@@ -20,7 +19,7 @@ void main() {
       addTearDown(
         tester.platformDispatcher.clearAccessibilityFeaturesTestValue,
       );
-      await tester.pumpWidget(const MyApp());
+      await tester.pumpWidget(MyApp(services: testServices()));
 
       final button = find.byKey(const Key('spin-button'));
       final winner = find.byKey(const Key('winner-card'));
@@ -76,40 +75,24 @@ void main() {
     expect(mealPeriodFor(DateTime(2026, 1, 1, 18)), MealPeriod.dinner);
   });
 
-  test('kho mẫu có 57 món, id duy nhất và đọc được nhiều atlas', () {
-    expect(sampleFoods, hasLength(57));
-    expect(sampleFoods.map((food) => food.id).toSet(), hasLength(57));
-
-    final miQuang = sampleFoods.firstWhere((food) => food.id == 'mi-quang');
-    expect(miQuang.imageAsset, 'assets/images/foods-lunch-2.png');
-    expect(miQuang.imageCell, 0);
-
-    final bunThang = sampleFoods.firstWhere((food) => food.id == 'bun-thang');
-    expect(bunThang.imageAsset, 'assets/images/foods-lunch-3.png');
-
-    final nemCuaBe = sampleFoods.firstWhere((food) => food.id == 'nem-cua-be');
-    expect(nemCuaBe.imageAsset, 'assets/images/foods-lunch-4.png');
-    expect(nemCuaBe.imageCell, 5);
-  });
-
   test('lọc theo bữa và ưu tiên ngân sách mà không loại món', () {
     final breakfastFoods = filterFoods(
       sampleFoods,
-      FoodCategory.lunch,
+      mainCategory,
       MealPeriod.breakfast,
     );
-    expect(breakfastFoods.any((food) => food.id == 'xoi-xeo'), isTrue);
-    expect(breakfastFoods.any((food) => food.id == 'sushi'), isFalse);
+    expect(breakfastFoods.any((food) => food.id == '3'), isTrue);
+    expect(breakfastFoods.any((food) => food.id == '2'), isFalse);
 
     final drinkingFoods = filterFoods(
       sampleFoods,
-      FoodCategory.drinking,
+      drinkCategory,
       MealPeriod.lunch,
     );
-    expect(drinkingFoods, hasLength(11));
+    expect(drinkingFoods, hasLength(2));
 
-    final phoBo = sampleFoods.firstWhere((food) => food.id == 'pho-bo');
-    final sushi = sampleFoods.firstWhere((food) => food.id == 'sushi');
+    final phoBo = sampleFoods.firstWhere((food) => food.id == '1');
+    final sushi = sampleFoods.firstWhere((food) => food.id == '2');
     final random = math.Random(7);
     final picks = List.generate(
       200,
@@ -129,18 +112,18 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(const MyApp());
+    await tester.pumpWidget(MyApp(services: testServices()));
     await tester.pump();
 
     expect(find.text('HÔM NAY ĂN GÌ?'), findsOneWidget);
-    expect(find.byType(Image), findsWidgets);
+    expect(find.byType(Icon), findsWidgets);
     expect(tester.takeException(), isNull);
   });
 
   testWidgets('lọc đúng loại món và ngân sách không ẩn món', (tester) async {
-    await tester.pumpWidget(const MyApp());
+    await tester.pumpWidget(MyApp(services: testServices()));
 
-    await tester.tap(find.byKey(const Key('category-drink')));
+    await tester.tap(find.byKey(const Key('category-do-uong')));
     await tester.pumpAndSettle();
     var inventory = find.byKey(const Key('inventory-grid'));
 
@@ -170,9 +153,9 @@ void main() {
   });
 
   testWidgets('cho phép đổi bữa bằng cách bấm lại chip bữa ăn', (tester) async {
-    await tester.pumpWidget(const MyApp());
+    await tester.pumpWidget(MyApp(services: testServices()));
 
-    final mealChip = find.byKey(const Key('category-lunch'));
+    final mealChip = find.byKey(const Key('category-mon-chinh'));
     final before = tester
         .widget<Text>(
             find.descendant(of: mealChip, matching: find.byType(Text)))
@@ -191,7 +174,7 @@ void main() {
   testWidgets('khóa khi quay, kết quả trùng thẻ thắng và quay lại được', (
     tester,
   ) async {
-    await tester.pumpWidget(const MyApp());
+    await tester.pumpWidget(MyApp(services: testServices()));
 
     final spinButton = find.byKey(const Key('spin-button'));
     await tester.tap(spinButton);
@@ -245,16 +228,15 @@ void main() {
     const otherCategoryFood = FoodItem(
       id: 'other-category',
       name: 'Món thử nghiệm',
-      category: FoodCategory.drink,
+      category: drinkCategory,
       price: 200000,
       rarity: FoodRarity.ancient,
-      imageIndex: 0,
     );
 
-    final library = FoodLibrary.inMemory(baseFoods: const [otherCategoryFood]);
+    final library = testLibrary(foods: const [otherCategoryFood]);
     addTearDown(library.dispose);
     await tester.pumpWidget(
-      MaterialApp(home: FoodSpinnerPage(library: library)),
+      MaterialApp(home: FoodSpinnerPage(services: testServices(library: library))),
     );
 
     expect(find.byKey(const Key('empty-reel')), findsOneWidget);

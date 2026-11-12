@@ -6,6 +6,8 @@ import '../widgets/common.dart';
 import 'account_actions.dart';
 import 'auth_pages.dart';
 import 'my_reviews_page.dart';
+import 'group_rooms_page.dart';
+import 'meal_plans_page.dart';
 
 /// Tab Tài khoản (FR-M10).
 class AccountPage extends StatelessWidget {
@@ -82,6 +84,12 @@ class AccountPage extends StatelessWidget {
           ),
         ),
       const Divider(),
+      item(Icons.groups_outlined, 'Chọn món cùng nhóm', () {
+        Navigator.of(context).push(MaterialPageRoute(builder: (_) => GroupRoomsPage(services: services)));
+      }),
+      item(Icons.calendar_month_outlined, 'Thực đơn của tôi', () {
+        Navigator.of(context).push(MaterialPageRoute(builder: (_) => MealPlansPage(services: services)));
+      }),
       item(Icons.rate_review_outlined, 'Review của tôi', key: const Key('my-reviews'), () {
         Navigator.of(context).push(MaterialPageRoute(builder: (_) => MyReviewsPage(services: services)));
       }),

@@ -43,6 +43,7 @@ IconData iconForCategory(String? key) => _categoryIcons[key] ?? Icons.restaurant
 /// Nhóm món do admin quản lý trên server.
 class FoodCategory {
   const FoodCategory({
+    this.id = 0,
     required this.slug,
     required this.name,
     required this.iconKey,
@@ -50,6 +51,7 @@ class FoodCategory {
   });
 
   final String slug;
+  final int id;
   final String name;
   final String iconKey;
   final bool usesMealPeriods;
@@ -63,6 +65,7 @@ class FoodCategory {
     final name = json['name'];
     if (slug is! String || name is! String) return null;
     return FoodCategory(
+      id: json['id'] is num ? (json['id'] as num).toInt() : 0,
       slug: slug,
       name: name,
       iconKey: json['icon'] as String? ?? 'restaurant',

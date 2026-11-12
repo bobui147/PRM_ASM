@@ -212,6 +212,18 @@ Danh sách việc cần làm theo `requirements.md` v2.0. Đánh dấu `[x]` khi
 - [ ] **F15.4** Cập nhật `README.md` gốc: kiến trúc mới, cách chạy app với `API_BASE_URL`, bỏ phần dữ liệu món cục bộ và món tự tạo.
 - [ ] **F15.5** Đánh dấu hoàn tất toàn bộ `TASKS.md` và cập nhật bảng tổng quan.
 
+## Phạm vi mở rộng — cộng đồng, chọn món nhóm, thực đơn
+
+- [x] **P1 server/admin:** migration `004`–`005`, bài đăng và ảnh, bảng tin, hồ sơ/theo dõi, bình luận chờ duyệt, like, báo cáo, kiểm duyệt và nhật ký. Kiểm thử MySQL và admin session/CSRF đã qua.
+- [x] **P2 server:** migration `006`, tạo/vào/rời phòng, bộ lọc, chọn/loại chung, bỏ phiếu/quay, snapshot, hạn phòng và khóa transaction. Kiểm thử MySQL về quyền, loại chung, kết nối lại và chốt đồng thời đã qua.
+- [x] **P3 server:** migration `007`, kế hoạch ngày/tuần, muốn thử, xác nhận/hoàn tác đã ăn, kiểm tra quyền và cascade. Kiểm thử MySQL đã qua.
+- [x] Tài liệu API và request mẫu: `server/docs/extensions.md`, `server/docs/extensions.http`; hướng dẫn migration và cron dọn dữ liệu.
+- [ ] **Flutter:** đã viết màn hình và nối điều hướng cho P1/P2/P3, thêm widget test và chuyển test cũ sang fixture danh mục API; chưa chạy analyze/test/build vì SDK cũ không còn tồn tại và chưa lấy được SDK thay thế.
+- [ ] Kiểm tra thủ công Android/Web (360×640, 390×844), nhiều thiết bị cùng phòng, xóa tài khoản kèm ảnh và khả năng tiếp cận.
+- [ ] Cài cron dọn báo cáo/nhật ký 90 ngày, migrate/deploy server thực tế sau backup. Script sẵn tại `server/scripts/cleanup-community.js`.
+
+Ngày 12/11/2026: toàn bộ server **55/55 test qua** trên MySQL 8.4 tạm riêng, ESLint và Prettier check qua. Không dùng database MySQL đang có của người dùng; không tạo hoặc điền `.env.test`. Chưa nghiệm thu đầu-cuối app.
+
 ## Ghi chú và quyết định phát sinh
 
 Ghi lại ở đây những thay đổi so với `requirements.md` trong quá trình làm (ngày, nội dung, lý do), rồi cập nhật lại `requirements.md` cho khớp.

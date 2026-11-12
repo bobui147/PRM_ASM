@@ -8,6 +8,10 @@ const { createMeRouter } = require('../modules/users/me.routes');
 const { createCatalogRouter } = require('../modules/catalog/catalog.routes');
 const { createRestaurantRouter } = require('../modules/restaurants/restaurant.routes');
 const { createReviewRouter } = require('../modules/reviews/review.routes');
+const { createCommunityProfilesRouter } = require('../modules/users/community-profiles.routes');
+const { createCommunityRouter } = require('../modules/community/community.routes');
+const { createGroupsRouter } = require('../modules/groups/groups.routes');
+const { createPlansRouter } = require('../modules/plans/plans.routes');
 
 /** Router /api/v1 (requirements §13). */
 function createApiRouter({ checkDatabase, config }) {
@@ -48,6 +52,10 @@ function createApiRouter({ checkDatabase, config }) {
   router.use(createCatalogRouter());
   router.use(createRestaurantRouter());
   router.use(createReviewRouter());
+  router.use(createCommunityProfilesRouter());
+  router.use(createCommunityRouter());
+  router.use(createGroupsRouter());
+  router.use(createPlansRouter());
 
   // Đường dẫn /api/v1/* không tồn tại luôn trả JSON.
   router.use((_req, _res, next) => {

@@ -56,15 +56,23 @@ function createMeRouter() {
 
   router.delete('/', validate({ body: schema.deleteMeBody }), async (req, res) => {
     await checkPassword(req.user.id, req.valid.body.password);
-    const reviewIds = await withTransaction(async (conn) => {
+    const { reviewIds, postIds } = await withTransaction(async (conn) => {
+      // Cùng khóa với thao tác tạo bài để không bỏ sót thư mục ảnh khi xóa đồng thời.
+      await conn.query('SELECT id FROM users WHERE id = ? FOR UPDATE', [req.user.id]);
       const [reviews] = await conn.query('SELECT id, restaurant_id FROM reviews WHERE user_id = ?', [req.user.id]);
+      const [posts] = await conn.query('SELECT id FROM community_posts WHERE user_id = ?', [req.user.id]);
       await conn.query('DELETE FROM users WHERE id = ?', [req.user.id]);
       for (const restaurantId of new Set(reviews.map((review) => review.restaurant_id))) {
         await recalculateRestaurantRating(conn, restaurantId);
       }
-      return reviews.map((review) => review.id);
+      return { reviewIds: reviews.map((review) => review.id), postIds: posts.map((p) => p.id) };
     });
     const storage = getStorage();
+    for (const id of postIds) {
+      await storage
+        .removeDir(`community/${id}`)
+        .catch((error) => req.log?.warn({ err: error }, 'Không xóa được ảnh cộng đồng'));
+    }
     for (const id of reviewIds) {
       await storage
         .removeDir(`reviews/${id}`)

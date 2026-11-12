@@ -83,7 +83,7 @@ Future<void> deleteAccount(BuildContext context, AppServices services) async {
     context: context,
     builder: (context) => AlertDialog(
       title: const Text('Xóa vĩnh viễn?'),
-      content: const Text('Tài khoản, mọi review, ảnh và báo cáo của bạn sẽ bị xóa và không khôi phục được.'),
+      content: const Text('Tài khoản, review, bài viết, bình luận, ảnh, báo cáo, theo dõi và thực đơn của bạn sẽ bị xóa vĩnh viễn. Phòng do bạn tạo sẽ kết thúc.'),
       actions: [
         TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Hủy')),
         FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Xóa tài khoản')),

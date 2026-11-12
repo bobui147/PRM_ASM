@@ -19,6 +19,7 @@ const { createReviewsRouter } = require('../modules/admin/reviews.admin');
 const { createReportsRouter } = require('../modules/admin/reports.admin');
 const { createUsersRouter } = require('../modules/admin/users.admin');
 const { createAuditRouter } = require('../modules/admin/audit.admin');
+const { createCommunityAdminRouter } = require('../modules/admin/community.admin');
 
 const dateFormat = new Intl.DateTimeFormat('vi-VN', {
   timeZone: 'Asia/Ho_Chi_Minh',
@@ -74,6 +75,7 @@ function createAdminRouter({ config }) {
   router.use('/reports', createReportsRouter());
   router.use('/users', createUsersRouter());
   router.use('/audit-logs', createAuditRouter());
+  router.use('/community', createCommunityAdminRouter());
 
   return router;
 }

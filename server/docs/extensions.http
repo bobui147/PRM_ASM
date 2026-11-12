@@ -1,0 +1,74 @@
+@base = http://localhost:3000/api/v1
+@token = REPLACE_ACCESS_TOKEN
+@post = 1
+@room = 1
+@food = 1
+@entry = 1
+
+### Bảng tin
+GET {{base}}/community/posts?page=1
+
+### Bài của tôi, gồm cả chờ duyệt
+GET {{base}}/community/posts?mine=true
+Authorization: Bearer {{token}}
+
+### Bài mới không ảnh (ảnh gửi multipart images)
+POST {{base}}/community/posts
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"content":"Bữa trưa hôm nay","foodId":{{food}}}
+
+### Bình luận chờ duyệt
+POST {{base}}/community/posts/{{post}}/comments
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"content":"Món này ngon quá"}
+
+### Thích (DELETE cùng URL để bỏ thích)
+PUT {{base}}/community/posts/{{post}}/like
+Authorization: Bearer {{token}}
+
+### Tạo phòng
+POST {{base}}/groups
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"categoryId":1,"budget":50000}
+
+### Vào phòng
+POST {{base}}/groups/join
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"code":"REPLACE_ROOM_CODE"}
+
+### Chốt kết quả quay (xem thêm actions trong extensions.md)
+POST {{base}}/groups/{{room}}/action
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"action":"spin"}
+
+### Thêm vào kế hoạch
+POST {{base}}/plans/entries
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"foodId":{{food}},"date":"2026-11-12","meal":"lunch"}
+
+### Xem tuần
+GET {{base}}/plans/entries?from=2026-11-12&to=2026-11-18
+Authorization: Bearer {{token}}
+
+### Xác nhận đã ăn
+PATCH {{base}}/plans/entries/{{entry}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"eaten":true}
+
+### Lưu món muốn thử
+PUT {{base}}/plans/wishlist/{{food}}
+Authorization: Bearer {{token}}

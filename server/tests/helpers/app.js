@@ -1,5 +1,16 @@
 'use strict';
 
+// Các test HTTP khung không cần MySQL hoặc timer dọn session production.
+jest.mock('../../src/middleware/admin', () => ({
+  ...jest.requireActual('../../src/middleware/admin'),
+  createAdminSession: (config) =>
+    require('express-session')({
+      secret: config.auth.sessionSecret,
+      resave: false,
+      saveUninitialized: false,
+    }),
+}));
+
 const { parseConfig } = require('../../src/config');
 const { createLogger } = require('../../src/logger');
 const { createApp } = require('../../src/app');

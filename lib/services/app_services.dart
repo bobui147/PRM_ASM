@@ -12,7 +12,8 @@ class AppServices {
     required this.auth,
     required this.restaurants,
     this.storage,
-  });
+    ApiClient? communityApi,
+  }) : communityApi = communityApi ?? ApiClient();
 
   /// Bản đầy đủ: gọi server thật, lưu dữ liệu trên máy.
   factory AppServices.create({AppStorage? storage, ApiClient? api}) {
@@ -25,6 +26,7 @@ class AppServices {
       auth: AuthService(client),
       restaurants: RestaurantRepository(client),
       storage: storage,
+      communityApi: client,
     );
   }
 
@@ -35,6 +37,7 @@ class AppServices {
       library: library ?? FoodLibrary.inMemory(),
       auth: AuthService(client, store: MemoryTokenStore()),
       restaurants: RestaurantRepository(client),
+      communityApi: client,
     );
   }
 
@@ -42,6 +45,7 @@ class AppServices {
   final AuthService auth;
   final RestaurantRepository restaurants;
   final AppStorage? storage;
+  final ApiClient communityApi;
 
   void dispose() {
     library.dispose();

@@ -1,5 +1,9 @@
 # Hôm nay ăn gì? — PRM_ASM
 
+## Phần mở rộng ngày 12/11/2026
+
+Đã bổ sung mã nguồn cộng đồng (bài/ảnh, bình luận, thích, theo dõi và admin duyệt), phòng chọn món nhóm và thực đơn cá nhân. Tab **Cộng đồng** ở thanh điều hướng; **Chọn món cùng nhóm** và **Thực đơn của tôi** trong tab Tài khoản. Xem [yêu cầu mở rộng](requirements-mo-rong.md) và [API/cách chạy](server/docs/extensions.md). Các phần bên dưới mô tả phiên bản cũ; danh mục hiện tải từ server và app có thêm Tài khoản, Cộng đồng.
+
 Ứng dụng Flutter giúp chọn món ăn ngẫu nhiên bằng hiệu ứng quay hòm: dải thẻ món chạy ngang, giảm tốc rồi dừng dưới mũi tên ở giữa. Món được chọn hiển thị trong hộp kết quả kèm ảnh, giá tham khảo và nút tìm quán trên Google Maps.
 
 Dự án lấy cảm hứng từ giao diện [Két Hội Thợ Lùn — Trưa Nay Ăn Gì](https://truanayangi.com/?theme=ket-hoi-tho-lun). Đây là ứng dụng Flutter độc lập, hướng đến Android và có thể chạy trên Chrome để phát triển, kiểm tra giao diện.

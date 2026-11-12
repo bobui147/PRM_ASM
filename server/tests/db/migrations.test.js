@@ -8,9 +8,23 @@ const { runMigrations, listMigrationFiles, MIGRATIONS_DIR } = require('../../src
 const { getTestConfig, resetTestDatabase, truncateDataTables, closeTestDatabase } = require('../helpers/db');
 
 const EXPECTED_TABLES = [
+  'meal_wishlist',
+  'meal_plan_entries',
+  'group_votes',
+  'group_choices',
+  'group_candidates',
+  'group_members',
+  'group_rooms',
   'admin_audit_logs',
   'admins',
   'app_settings',
+  'community_follows',
+  'community_actions',
+  'community_comments',
+  'community_images',
+  'community_likes',
+  'community_posts',
+  'community_reports',
   'email_otps',
   'food_categories',
   'food_meal_periods',
@@ -36,7 +50,7 @@ describe('migration (S2.10)', () => {
     const [rows] = await getPool().query(
       'SELECT table_name AS name, table_collation AS co FROM information_schema.tables WHERE table_schema = DATABASE() ORDER BY name',
     );
-    expect(rows.map((row) => row.name)).toEqual(EXPECTED_TABLES);
+    expect(rows.map((row) => row.name)).toEqual([...EXPECTED_TABLES].sort());
     expect(new Set(rows.map((row) => row.co))).toEqual(new Set(['utf8mb4_unicode_ci']));
   });
 

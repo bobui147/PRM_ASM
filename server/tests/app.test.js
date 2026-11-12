@@ -100,8 +100,8 @@ describe('Web admin khung', () => {
     expect(res.headers.location).toBe('/admin');
   });
 
-  test('/admin render HTML tiếng Việt, không cache', async () => {
-    const res = await request(buildTestApp()).get('/admin');
+  test('/admin/login render HTML tiếng Việt, không cache', async () => {
+    const res = await request(buildTestApp()).get('/admin/login');
     expect(res.status).toBe(200);
     expect(res.headers['content-type']).toMatch(/text\/html/);
     expect(res.headers['cache-control']).toBe('no-store');
@@ -109,11 +109,10 @@ describe('Web admin khung', () => {
     expect(res.text).toContain('/static/vendor/bootstrap/css/bootstrap.min.css');
   });
 
-  test('trang admin không tồn tại trả trang lỗi HTML 404', async () => {
+  test('trang admin cần đăng nhập trước khi truy cập', async () => {
     const res = await request(buildTestApp()).get('/admin/khong-co');
-    expect(res.status).toBe(404);
-    expect(res.headers['content-type']).toMatch(/text\/html/);
-    expect(res.text).toContain('Không tìm thấy trang');
+    expect(res.status).toBe(302);
+    expect(res.headers.location).toBe('/admin/login?next=%2Fadmin%2Fkhong-co');
   });
 
   test('phục vụ Bootstrap và CSS cục bộ', async () => {

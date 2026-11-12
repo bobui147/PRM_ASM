@@ -1,5 +1,7 @@
 # Hôm nay ăn gì? — Server
 
+Phần mở rộng cộng đồng, phòng chọn món nhóm và thực đơn: xem [API, quy tắc và cách chạy](docs/extensions.md), [request mẫu](docs/extensions.http). Cần chạy migration `004`–`007` trước khi dùng API mới.
+
 Web admin (EJS) và REST API (`/api/v1`) cho app Flutter. Yêu cầu chi tiết ở `../requirements.md`, tiến độ ở `../TASKS.md`.
 
 ## Yêu cầu
@@ -73,6 +75,12 @@ tests/
 ```
 
 ## Quy ước
+
+### API hồ sơ cộng đồng (đang phát triển)
+
+- `GET /api/v1/users/{id}/profile`: tên hiển thị, số người theo dõi/đang theo dõi và trạng thái theo dõi của người gọi; không trả email.
+- `PUT /api/v1/users/{id}/follow`: theo dõi; `DELETE` cùng đường dẫn để bỏ theo dõi. Cần tài khoản đã xác minh và không bị khóa; hai thao tác có thể gọi lặp. Không thể tự theo dõi.
+- Chạy `npm run migrate` để tạo các bảng mới; API và giao diện mở rộng được mô tả trong `docs/extensions.md`.
 
 - Lỗi API luôn có dạng `{ "error": { "code", "message", "fields"? } }` (requirements §13.1). Trong route, ném `AppError`, không tự gửi response lỗi.
 - Kiểm tra input bằng `validate({ body, query, params })`, đọc dữ liệu đã chuẩn hóa từ `req.valid`.

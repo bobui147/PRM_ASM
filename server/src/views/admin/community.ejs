@@ -1,0 +1,28 @@
+<%- include('../partials/header') %>
+<main id="main" class="container py-4">
+  <h1>Cộng đồng</h1>
+  <form method="get" class="d-flex gap-2 mb-3 flex-wrap">
+    <label>Loại <select name="type" class="form-select"><% for (const [v,l] of [['posts','Bài viết'],['comments','Bình luận'],['reports','Báo cáo']]) { %><option value="<%= v %>" <%= type===v?'selected':'' %>><%= l %></option><% } %></select></label>
+    <label>Trạng thái <select name="status" class="form-select"><option value="">Tất cả</option><% for (const v of ['pending','published','rejected','hidden','open','resolved','dismissed']) { %><option <%= status===v?'selected':'' %>><%= v %></option><% } %></select></label>
+    <label>ID người dùng <input class="form-control" name="userId" type="number" min="1"></label><button class="btn btn-primary">Lọc</button>
+  </form>
+  <% for (const row of rows) { %>
+  <article class="card p-3 mb-3">
+    <h2 class="h5">#<%= row.id %> · <%= row.author_name || '' %> · <%= row.status %></h2>
+    <p><%= row.content || '' %></p><p><%= fmtDate(row.created_at) %></p>
+    <% for (const img of row.images) { %><a href="<%= uploadUrl(img.image_path) %>" target="_blank" rel="noopener"><img src="<%= uploadUrl(img.image_path) %>" width="160" alt="Ảnh bài viết"></a><% } %>
+    <% if (type==='reports') { %><p>Lý do: <%= row.reason %> · <%= row.details || '' %></p><% } %>
+    <% if (row.user_id) { %><p><a href="/admin/users/<%= row.user_id %>">Xem tác giả / khóa tài khoản</a></p><% } %>
+    <% const actions = type==='reports' ? (row.status==='open'?['resolve','dismiss']:[]) : row.status==='pending'?['approve','reject','delete']:row.status==='published'?['hide','delete']:row.status==='hidden'?['unhide','delete']:['delete']; %>
+    <% for (const action of actions) { %>
+    <form method="post" action="/admin/community/<%= type %>/<%= row.id %>/<%= action %>" class="my-1">
+      <input type="hidden" name="_csrf" value="<%= csrf() %>">
+      <% if (action==='reject') { %><label>Lý do từ chối <input name="note" maxlength="300" required class="form-control"></label><% } %>
+      <% if (action==='delete') { %><label><input type="checkbox" name="confirm" value="yes" required> Xác nhận xóa vĩnh viễn nội dung và ảnh liên quan</label><% } %>
+      <button class="btn btn-sm btn-outline-primary"><%= ({approve:'Duyệt',reject:'Từ chối',hide:'Ẩn',unhide:'Hiện lại',delete:'Xóa',resolve:'Ẩn nội dung và xử lý',dismiss:'Bỏ qua'})[action] %></button>
+    </form><% } %>
+  </article><% } %>
+  <% if (!rows.length) { %><p>Không có dữ liệu.</p><% } %>
+  <nav aria-label="Phân trang"><% if(page>1) { %><a href="<%= pageUrl(page-1) %>">Trước</a><% } %> <%= page %>/<%= totalPages %> <% if(page<totalPages) { %><a href="<%= pageUrl(page+1) %>">Sau</a><% } %></nav>
+</main>
+<%- include('../partials/footer') %>

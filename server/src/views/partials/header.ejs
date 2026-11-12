@@ -27,7 +27,7 @@
         const menu = [
           ['/admin', 'Dashboard'], ['/admin/categories', 'Nhóm món'], ['/admin/foods', 'Món ăn'],
           ['/admin/restaurants', 'Quán ăn'], ['/admin/reviews/pending', 'Duyệt review'], ['/admin/reviews', 'Tất cả review'],
-          ['/admin/reports', 'Báo cáo'], ['/admin/users', 'Người dùng'], ['/admin/audit-logs', 'Nhật ký'],
+          ['/admin/reports', 'Báo cáo'], ['/admin/community', 'Cộng đồng'], ['/admin/users', 'Người dùng'], ['/admin/audit-logs', 'Nhật ký'],
         ];
         const isActive = (href) => href === '/admin' ? currentPath === '/admin' || currentPath === '/admin/'
           : href === '/admin/reviews' ? currentPath === '/admin/reviews' : currentPath.startsWith(href);
